@@ -11,7 +11,7 @@ Qraft is a clean, client-side QR creation studio for making branded, readable QR
 - 24 QR content types
 - 36+ ready-made templates with categories and search
 - Simple quick styles with optional advanced controls
-- Custom patterns and finder styles
+- Standard, scan-safe QR rendering with reliable finder patterns
 - Logo support with safer error correction
 - Readability and contrast checks
 - Fresh QR rendering for every export
@@ -22,13 +22,14 @@ Qraft is a clean, client-side QR creation studio for making branded, readable QR
 - Undo / redo
 - Responsive landing page and studio
 - Qraft brand assets included in `public/`
+- Motion-rich landing page with animated QR showcase and template previews
 
 ## Tech stack
 
 - React 19
 - TypeScript
 - Vite 6
-- QRCode.js
+- `qrcode` package for standards-compliant QR generation
 - jsQR
 - JSZip
 - jsPDF
