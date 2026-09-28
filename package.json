@@ -25,11 +25,13 @@
     "typescript": "^5.7.2",
     "vite": "^6.0.5"
   },
-  "description": "Clean, client-side QR creation and design studio.",
+  "description": "Friendly, browser-first QR creation, templates, design, export and scan-test studio.",
   "keywords": [
     "qr-code",
     "qr-generator",
     "qr-designer",
+    "qr-scanner",
+    "templates",
     "react",
     "vite",
     "typescript"
