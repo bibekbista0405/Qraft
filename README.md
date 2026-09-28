@@ -8,6 +8,8 @@ Qraft is a clean, client-side QR creation studio for making branded, readable QR
 
 ## Features
 
+- **Offline Image QR** — compact image thumbnails can be embedded directly into the QR payload and recovered by Qraft without internet access.
+
 - 24 QR content types
 - 36+ ready-made templates with categories and search
 - Simple quick styles with optional advanced controls
@@ -71,3 +73,7 @@ Normal QR generation, projects, scanning and batch preparation happen locally in
 ## License
 
 MIT — see `LICENSE`.
+
+## Image QR limitation
+
+Qraft's Image QR mode embeds a compact compressed thumbnail directly in the QR payload. QR codes have a strict data-capacity limit, so this is intentionally a small preview rather than a full-resolution photograph. Qraft's scanner recognizes the embedded payload and displays the image locally without a network request. A normal third-party camera/scanner will see the encoded payload text; making a full-resolution image appear automatically in every phone camera requires an online URL/hosting destination or a dedicated scanner app.
