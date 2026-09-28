@@ -1,7 +1,7 @@
 {
-  "name": "qr-code",
+  "name": "qraft",
   "private": true,
-  "version": "2.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -24,5 +24,17 @@
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",
     "vite": "^6.0.5"
+  },
+  "description": "Clean, client-side QR creation and design studio.",
+  "keywords": [
+    "qr-code",
+    "qr-generator",
+    "qr-designer",
+    "react",
+    "vite",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=20"
   }
 }
