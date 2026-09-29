@@ -8,7 +8,7 @@ export type Finder = "square"|"rounded";
 export type EC = "L"|"M"|"Q"|"H";
 export type FrameStyle = "none"|"soft"|"badge"|"scan"|"ticket";
 export type BodyShape = Pattern;
-export type DesignState = {title:string;subtitle:string;fg:string;bg:string;bodyShape:BodyShape;finder:Finder;ec:EC;size:number;margin:number;transparent:boolean;logo:string|null;logoName:string;logoSize:number;frame:boolean;frameStyle:FrameStyle;cta:string;radius:number;gradient:boolean;accent:string;advanced?:boolean;logoPreset?:boolean};
+export type DesignState = {title:string;subtitle:string;fg:string;bg:string;bodyShape:BodyShape;finder:Finder;ec:EC;size:number;margin:number;transparent:boolean;logo:string|null;logoName:string;logoSize:number;frame:boolean;frameStyle:FrameStyle;cta:string;radius:number;gradient:boolean;inkGradient?:boolean;gradientEnd?:string;accent:string;advanced?:boolean;logoPreset?:boolean};
 
 /** The QR spec requires a 4-module quiet zone. */
 export const MIN_MARGIN = 4;
@@ -86,7 +86,8 @@ export async function renderQR(payload:string,d:DesignState,size=d.size):Promise
   if(!d.transparent){ctx.fillStyle=d.bg;ctx.fillRect(0,0,size,size);}
   const cell=size/(modules+margin*2);
   const off=margin*cell;
-  ctx.fillStyle=d.fg;
+  const inkGradient = d.inkGradient ? ctx.createLinearGradient(off,off,size-off,size-off) : null;
+  if(inkGradient){ inkGradient.addColorStop(0,d.fg); inkGradient.addColorStop(1,d.gradientEnd || d.accent || d.fg); ctx.fillStyle=inkGradient; } else ctx.fillStyle=d.fg;
   const overlap=Math.min(.3,cell*.06);
   const drawModule=(cx:number,cy:number,shape:BodyShape)=>{
     if(shape==="square"){ctx.fillRect(cx-overlap,cy-overlap,cell+overlap*2,cell+overlap*2);return;}
@@ -104,7 +105,7 @@ export async function renderQR(payload:string,d:DesignState,size=d.size):Promise
   const rr=finder==="rounded"?cell*.65:0;
   for(const [fr,fc] of [[0,0],[0,modules-7],[modules-7,0]]){
     const x=off+fc*cell,y=off+fr*cell;
-    ctx.fillStyle=d.fg;
+    if(inkGradient) ctx.fillStyle=inkGradient; else ctx.fillStyle=d.fg;
     ctx.beginPath();
     ctx.roundRect(x,y,cell*7,cell*7,rr);
     ctx.roundRect(x+cell,y+cell,cell*5,cell*5,rr*.68);
@@ -128,6 +129,7 @@ export async function qrSvg(payload:string,d:DesignState):Promise<string>{
   const size=1000,cell=size/(modules+margin*2),off=margin*cell;
   const f=(n:number)=>+n.toFixed(3);
   let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+  if(d.inkGradient) out+=`<defs><linearGradient id="qraftInkGradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${d.fg}"/><stop offset="100%" stop-color="${d.gradientEnd || d.accent || d.fg}"/></linearGradient></defs>`;
   if(!d.transparent)out+=`<rect width="${size}" height="${size}" fill="${d.bg}"/>`;
   let squares="",shapes="";
   for(let r=0;r<modules;r++)for(let c=0;c<modules;c++){
