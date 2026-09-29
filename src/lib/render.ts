@@ -74,6 +74,9 @@ const rrPath=(x:number,y:number,w:number,h:number,r:number)=>{
  */
 export async function renderQR(payload:string,d:DesignState,size=d.size):Promise<HTMLCanvasElement>{
   const {shape,finder,logo,modules,data,margin,solid}=setup(payload,d);
+  // Dense QR matrices have less geometric tolerance. Keep decorative modules
+  // conservative at high versions so the same renderer remains broadly scannable.
+  const safeShape:BodyShape = modules >= 45 && shape !== "square" ? "square" : shape;
   const canvas=document.createElement("canvas");
   canvas.width=size;canvas.height=size;
   const ctx=canvas.getContext("2d");
@@ -96,7 +99,7 @@ export async function renderQR(payload:string,d:DesignState,size=d.size):Promise
   for(let r=0;r<modules;r++)for(let c=0;c<modules;c++){
     if(data[r*modules+c]!==1||inFinder(r,c,modules))continue;
     // Alignment patterns stay solid: decoders locate them by run-length, so dotted ones break scanning.
-    drawModule(off+c*cell,off+r*cell,solid(r,c)?(shape==="rounded"?"rounded":"square"):shape);
+    drawModule(off+c*cell,off+r*cell,solid(r,c)?(safeShape==="rounded"?"rounded":"square"):safeShape);
   }
   const rr=finder==="rounded"?cell*.65:0;
   for(const [fr,fc] of [[0,0],[0,modules-7],[modules-7,0]]){
@@ -121,6 +124,7 @@ export async function renderQR(payload:string,d:DesignState,size=d.size):Promise
 /** Real vector output: one path for square modules, ring paths for finders, logo matched to the PNG geometry. */
 export async function qrSvg(payload:string,d:DesignState):Promise<string>{
   const {shape:bodyShape,finder,logo,modules,data,margin,solid}=setup(payload,d);
+  const safeBodyShape:BodyShape = modules >= 45 && bodyShape !== "square" ? "square" : bodyShape;
   const size=1000,cell=size/(modules+margin*2),off=margin*cell;
   const f=(n:number)=>+n.toFixed(3);
   let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
@@ -129,7 +133,7 @@ export async function qrSvg(payload:string,d:DesignState):Promise<string>{
   for(let r=0;r<modules;r++)for(let c=0;c<modules;c++){
     if(data[r*modules+c]!==1||inFinder(r,c,modules))continue;
     const x=off+c*cell,y=off+r*cell;
-    const shape:BodyShape=solid(r,c)?(bodyShape==="rounded"?"rounded":"square"):bodyShape;
+    const shape:BodyShape=solid(r,c)?(safeBodyShape==="rounded"?"rounded":"square"):safeBodyShape;
     if(shape==="square")squares+=`M${f(x)} ${f(y)}h${f(cell)}v${f(cell)}h${f(-cell)}z`;
     else if(shape==="dots")shapes+=`<circle cx="${f(x+cell/2)}" cy="${f(y+cell/2)}" r="${f(cell*.41)}"/>`;
     else if(shape==="diamond")shapes+=`<polygon points="${f(x+cell/2)},${f(y+cell*.07)} ${f(x+cell*.93)},${f(y+cell/2)} ${f(x+cell/2)},${f(y+cell*.93)} ${f(x+cell*.07)},${f(y+cell/2)}"/>`;
