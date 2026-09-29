@@ -167,3 +167,13 @@ a{color:inherit}
 .qr-health-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.qr-health-head>div{display:grid;gap:3px}.qr-health-head b{font-size:13px}.qr-health-head strong{font-size:16px;letter-spacing:-.03em;color:var(--accent)}
 .qr-health-bar{height:6px;overflow:hidden;border-radius:99px;background:#e7edf5}.qr-health-bar span{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .25s ease}
 .qr-health-items{display:flex;gap:8px;flex-wrap:wrap}.qr-health-items span{padding:5px 7px;border-radius:6px;background:#fff3f3;color:#a33b3b;font-size:8px;font-weight:800}.qr-health-items span.ok{background:#eefaf3;color:#18794e}.qr-health small{color:var(--muted);font-size:9px;line-height:1.4}
+
+
+/* Phase 4 — power tools */
+.batch-meta{display:flex;align-items:center;gap:8px;margin:10px 0 2px;color:var(--muted);font-size:9px}.batch-meta b{color:var(--text);font-size:10px}.lab-score{display:flex;align-items:center;justify-content:space-between;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);margin:12px 0}.lab-score strong{font-size:12px}.lab-score b{font-size:18px;color:var(--accent)}.lab-checks{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px}.lab-checks span{padding:7px 8px;border-radius:7px;background:#eefaf3;color:#18794e;font-size:8px;font-weight:850}.lab-checks span.warn{background:#fff6e8;color:#9a5a00}.backup-stat{display:flex;align-items:baseline;gap:7px;margin:12px 0;color:var(--muted)}.backup-stat b{font-size:28px;color:var(--text);letter-spacing:-.04em}.backup-stat span{font-size:10px}.utility-card .utility-actions{flex-wrap:wrap}
+@media(max-width:720px){.lab-checks{grid-template-columns:1fr}.batch-meta{flex-direction:column;align-items:flex-start}}
+
+/* Phase 5 — offline/PWA status */
+.offline-pill{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 9px;border:1px solid #f0c98b;border-radius:9px;background:#fff7e8;color:#9a5a00;font-size:9px;font-weight:900}
+.install-action{color:var(--accent)!important}
+@media(max-width:720px){.offline-pill{display:none}}

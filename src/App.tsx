@@ -12,7 +12,7 @@ import {
   FileText, ImagePlus, Layers, Link2, Mail, MapPin, MessageCircle, Palette, Phone, Play, QrCode,
   ScanLine, Search, Send, Settings2, Sparkles, Star, Ticket, Trash2, Undo2, Redo2, Upload,
   UserRound, Video, Wifi, X, Instagram, Facebook, Youtube, Smartphone, ShieldCheck, Zap, Menu,
-  SlidersHorizontal, CircleHelp, FolderOpen, LayoutTemplate, Paintbrush, Copy, Command, Clock3
+  SlidersHorizontal, CircleHelp, FolderOpen, LayoutTemplate, Paintbrush, Copy, Command, Clock3, WifiOff, DownloadCloud
 } from "lucide-react";
 
 type Step = 1|2|3|4;
@@ -142,10 +142,14 @@ type View = "landing"|"create"|"templates"|"tools"|"projects"|"scanner"|"privacy
 
 function Header({view,onNavigate,onHome}:{view:View;onNavigate:(v:View)=>void;onHome:()=>void}){
  const items:[View,string][]=[["create","Create"],["templates","Templates"],["tools","Tools"],["projects","Projects"],["scanner","Scan & test"]];
+ const [online,setOnline]=useState(()=>navigator.onLine);
+ const [installEvent,setInstallEvent]=useState<any>(null);
+ useEffect(()=>{const onOnline=()=>setOnline(true),onOffline=()=>setOnline(false),onInstall=(e:any)=>{e.preventDefault();setInstallEvent(e)},onInstalled=()=>setInstallEvent(null);window.addEventListener("online",onOnline);window.addEventListener("offline",onOffline);window.addEventListener("beforeinstallprompt",onInstall as EventListener);window.addEventListener("appinstalled",onInstalled);return()=>{window.removeEventListener("online",onOnline);window.removeEventListener("offline",onOffline);window.removeEventListener("beforeinstallprompt",onInstall as EventListener);window.removeEventListener("appinstalled",onInstalled)}},[]);
+ const install=async()=>{if(!installEvent)return;try{await installEvent.prompt()}catch{/* browser declined or does not support the prompt */}finally{setInstallEvent(null)}};
  return <header className="app-header">
    <button className="app-brand" onClick={onHome} aria-label="Qraft home"><img src={LOGO_SRC} alt="Qraft"/><span><b>Qraft</b><small>QR maker, made easy</small></span></button>
    <nav className="app-nav">{items.map(([id,label])=><button key={id} className={view===id?"active":""} onClick={()=>onNavigate(id)}>{label}</button>)}</nav>
-   <div className="header-actions"><button className="header-icon" onClick={()=>window.dispatchEvent(new Event("qraft:command"))} title="Command palette · Ctrl/⌘ K" aria-label="Open command palette"><Command size={17}/></button><button className="header-icon" onClick={()=>onNavigate("scanner")} title="Scan and test"><ScanLine size={17}/></button><button className="header-cta" onClick={()=>onNavigate("create")}><QrCode size={16}/> Create QR</button></div>
+   <div className="header-actions">{!online&&<span className="offline-pill" title="Qraft is offline. Local creation and saved projects remain available."><WifiOff size={14}/> Offline</span>}{installEvent&&<button className="header-icon install-action" onClick={()=>void install()} title="Install Qraft"><DownloadCloud size={17}/></button>}<button className="header-icon" onClick={()=>window.dispatchEvent(new Event("qraft:command"))} title="Command palette · Ctrl/⌘ K" aria-label="Open command palette"><Command size={17}/></button><button className="header-icon" onClick={()=>onNavigate("scanner")} title="Scan and test"><ScanLine size={17}/></button><button className="header-cta" onClick={()=>onNavigate("create")}><QrCode size={16}/> Create QR</button></div>
  </header>
 }
 
@@ -356,7 +360,51 @@ function TemplatesPage({state}:{state:AppState}){
  </main></div>
 }
 
-function ToolsPage({state}:{state:AppState}){const {setView,batch,setBatch,batchResults,runBatch,downloadBatch,batchProgress}=state;return <div className="page-shell"><Header view="tools" onNavigate={setView} onHome={()=>setView("landing")}/><main className="simple-page"><div className="page-intro"><div><span className="page-eyebrow">TOOLS</span><h1>Useful utilities, separated cleanly.</h1><p>Batch generation and scan/testing live here so the creator stays focused.</p></div></div><div className="tools-grid"><section className="utility-card wide"><div className="utility-icon"><FileArchive size={22}/></div><span className="eyebrow">BATCH</span><h2>Generate up to 1,000 QR codes</h2><p>One row per QR. Use <b>Name,URL</b> or just a URL.</p><textarea value={batch} onChange={e=>setBatch(e.target.value)} placeholder={'Restaurant,https://example.com/menu\nInstagram,https://instagram.com/qraft\nContact,https://example.com/contact'}/><div className="utility-actions"><button className="primary" onClick={runBatch} disabled={!batch.trim()||!!batchProgress}><Zap size={15}/> {batchProgress?`Generating ${batchProgress}…`:"Generate batch"}</button>{batchResults.length>0&&<button className="soft" onClick={downloadBatch}><Download size={15}/> Download ZIP ({batchResults.length})</button>}</div>{batchResults.length>0&&<div className="batch-grid">{batchResults.slice(0,16).map(r=><div key={r.name}><img src={r.url} alt={r.name}/><span>{r.name}</span></div>)}</div>}</section><section className="utility-card"><div className="utility-icon"><ScanLine size={22}/></div><span className="eyebrow">VERIFY</span><h2>Scan & test</h2><p>Camera scan, image drop, and internal self-test — all on one dedicated tool page.</p><button className="primary" onClick={()=>setView("scanner")}><ScanLine size={16}/> Open Scan & test</button></section><section className="utility-card"><div className="utility-icon"><CircleHelp size={22}/></div><span className="eyebrow">WORKFLOW</span><h2>Keep the creator clean</h2><p>Tools stay separate so the main create flow remains focused on your QR and its final design.</p></section></div></main></div>}
+function ToolsPage({state}:{state:AppState}){
+ const {setView,batch,setBatch,batchResults,runBatch,downloadBatch,batchProgress,payload,design,testCurrentQR,projects,exportProjects,importProjects}=state;
+ const [backupInput,setBackupInput]=useState<HTMLInputElement|null>(null);
+ const contrast=(a:string,b:string)=>{const lum=(hex:string)=>{const h=hex.replace("#","");const rgb=[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)].map(v=>{const x=v/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]};const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+ const ratio=contrast(design.fg,design.bg);const labStatus=ratio>=4.5&&design.margin>=4&&design.logoSize<=14?"Ready for testing":ratio>=3?"Review recommended":"High-risk design";
+ const downloadBatchSheet=async()=>{
+   if(!batchResults.length)return;
+   const cols=3,tile=420,gap=30,header=100,perSheet=60;
+   const load=(src:string)=>new Promise<HTMLImageElement>((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error("QR image failed to load"));img.src=src});
+   const makeSheet=async(items:{name:string;url:string}[],index:number)=>{
+     const rows=Math.ceil(items.length/cols);
+     const c=document.createElement("canvas");c.width=cols*tile+(cols+1)*gap;c.height=header+rows*tile+(rows+1)*gap;
+     const ctx=c.getContext("2d");if(!ctx)throw new Error("Canvas is unavailable");
+     ctx.fillStyle="#ffffff";ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle="#0f172a";ctx.font="800 28px Arial";ctx.fillText(`Qraft QR Batch · Sheet ${index+1}`,gap,60);
+     let failed=0;
+     for(let i=0;i<items.length;i++){
+       const item=items[i],col=i%cols,row=Math.floor(i/cols),x=gap+col*(tile+gap),y=header+gap+row*(tile+gap);
+       try{const img=await load(item.url);ctx.drawImage(img,x,y,tile,tile-34)}catch{failed++;ctx.fillStyle="#f1f5f9";ctx.fillRect(x,y,tile,tile-34);ctx.fillStyle="#64748b";ctx.font="700 15px Arial";ctx.fillText("Image unavailable",x+18,y+40)}
+       ctx.fillStyle="#0f172a";ctx.font="700 16px Arial";ctx.fillText(item.name.slice(0,38),x,y+tile-12);
+     }
+     const blob=await new Promise<Blob|null>(resolve=>c.toBlob(resolve,"image/png"));
+     if(!blob)throw new Error("Contact sheet could not be encoded");
+     return {blob,failed};
+   };
+   try{
+     const sheets=[];let totalFailed=0;
+     for(let offset=0;offset<batchResults.length;offset+=perSheet){
+       const result=await makeSheet(batchResults.slice(offset,offset+perSheet),sheets.length);
+       sheets.push(result.blob);totalFailed+=result.failed;
+       if(offset+perSheet<batchResults.length)await new Promise(r=>window.setTimeout(r,0));
+     }
+     if(sheets.length===1){downloadBlob(sheets[0],"qraft-batch-sheet.png")}else{
+       const {default:JSZip}=await import("jszip");const zip=new JSZip();sheets.forEach((blob,i)=>zip.file(`qraft-batch-sheet-${String(i+1).padStart(2,"0")}.png`,blob));downloadBlob(await zip.generateAsync({type:"blob"}),"qraft-batch-sheets.zip");
+     }
+     const suffix=totalFailed?` · ${totalFailed} image${totalFailed===1?"":"s"} unavailable`:"";
+     notify(sheets.length===1?`Contact sheet downloaded${suffix}`:`${sheets.length} contact sheets bundled in a ZIP${suffix}`);
+   }catch(e){notify(e instanceof Error?e.message:"Contact sheets could not be created.")}
+ };
+ return <div className="page-shell"><Header view="tools" onNavigate={setView} onHome={()=>setView("landing")}/><main className="simple-page"><div className="page-intro"><div><span className="page-eyebrow">TOOLS / POWER</span><h1>Power tools for testing, batches and backups.</h1><p>Advanced utilities stay separate from the creator so everyday QR design remains focused.</p></div></div><div className="tools-grid">
+ <section className="utility-card wide"><div className="utility-icon"><FileArchive size={22}/></div><span className="eyebrow">BATCH</span><h2>Generate up to 1,000 QR codes</h2><p>One row per QR. Use <b>Name,URL</b> or just a URL. Qraft normalizes plain domains and keeps duplicate filenames safe.</p><textarea value={batch} onChange={e=>setBatch(e.target.value)} placeholder={'Restaurant,https://example.com/menu\nInstagram,https://instagram.com/qraft\nContact,https://example.com/contact'}/><div className="utility-actions"><button className="primary" onClick={runBatch} disabled={!batch.trim()||!!batchProgress}><Zap size={15}/> {batchProgress?`Generating ${batchProgress}…`:"Generate batch"}</button>{batchResults.length>0&&<><button className="soft" onClick={downloadBatch}><Download size={15}/> ZIP ({batchResults.length})</button><button className="soft" onClick={downloadBatchSheet}><FileImage size={15}/> Contact sheet</button></>}</div>{batchResults.length>0&&<div className="batch-meta"><b>{batchResults.length} generated</b><span>Previewing the first 16 · PNG output · large batches use multi-sheet ZIP</span></div>}{batchResults.length>0&&<div className="batch-grid">{batchResults.slice(0,16).map(r=><div key={r.name}><img src={r.url} alt={r.name}/><span>{r.name}</span></div>)}</div>}</section>
+ <section className="utility-card"><div className="utility-icon"><ShieldCheck size={22}/></div><span className="eyebrow">QR LAB</span><h2>Design diagnostic</h2><p>Review the current design before you publish it. This is a heuristic, not a guarantee of every scanner.</p><div className="lab-score"><strong>{labStatus}</strong><b>{ratio.toFixed(1)}:1</b></div><div className="lab-checks"><span className={ratio>=4.5?"ok":"warn"}>● Contrast {ratio>=4.5?"good":"review"}</span><span className={design.margin>=4?"ok":"warn"}>● Quiet zone {design.margin>=4?"safe":"small"}</span><span className={design.logoSize<=14?"ok":"warn"}>● Logo {design.logo?`${design.logoSize}%`:'none'}</span><span className={payload.length<1200?"ok":"warn"}>● Payload {payload.length.toLocaleString()} chars</span></div><button className="primary" onClick={()=>void testCurrentQR()}><ShieldCheck size={16}/> Run decoder test</button></section>
+ <section className="utility-card"><div className="utility-icon"><ScanLine size={22}/></div><span className="eyebrow">VERIFY</span><h2>Scan & test</h2><p>Camera scan, image drop, and generated QR verification live on one dedicated tool page.</p><button className="primary" onClick={()=>setView("scanner")}><ScanLine size={16}/> Open Scan & test</button></section>
+ <section className="utility-card"><div className="utility-icon"><FolderOpen size={22}/></div><span className="eyebrow">BACKUPS</span><h2>Project backup</h2><p>Export your local Qraft library to JSON and restore it later on another browser.</p><div className="backup-stat"><b>{projects.length}</b><span>saved projects</span></div><div className="utility-actions"><button className="soft" onClick={exportProjects} disabled={!projects.length}><Download size={15}/> Export JSON</button><button className="soft" onClick={()=>backupInput?.click()}><Upload size={15}/> Import JSON</button><input ref={setBackupInput} type="file" hidden accept="application/json,.json" onChange={e=>{const f=e.target.files?.[0];if(f)void importProjects(f);e.currentTarget.value=""}}/></div></section>
+ <section className="utility-card"><div className="utility-icon"><CircleHelp size={22}/></div><span className="eyebrow">WORKFLOW</span><h2>Keep the creator clean</h2><p>Power tools stay here so the main Create flow remains focused on content, design and export.</p></section>
+ </div></main></div>}
 
 function ProjectsPage({state}:{state:AppState}){
  const {setView,projects,openProject,removeProject,clearProjects,newProject,duplicateProject,toggleFavorite}=state;
@@ -375,7 +423,7 @@ function MiniQR({fg,bg,ec="M",pattern="square",finder="square"}:{fg:string;bg:st
 }
 
 type AppState={
- view:View; setView:(v:View)=>void; newProject:()=>void; createStep:Step; setCreateStep:(s:Step)=>void; type:TypeId; setType:(t:TypeId)=>void; form:FormState; design:DesignState; updateForm:(k:keyof FormState,v:string)=>void; updateDesign:<K extends keyof DesignState>(k:K,v:DesignState[K])=>void; updateDesignMany:(p:Partial<DesignState>)=>void; onLogoFile:(e:ChangeEvent<HTMLInputElement>)=>void; stopScanner:()=>void; batchProgress:string; payload:string; busy:boolean; setBusy:(v:boolean)=>void; notify:(m:string)=>void; resetDesign:()=>void; testCurrentQR:()=>Promise<void>; copyPayload:()=>Promise<void>; exportRawPng:()=>Promise<void>; exportPng:()=>Promise<void>; exportSvg:()=>Promise<void>; exportPdf:()=>Promise<void>; exportDesign:()=>Promise<void>; undoAction:()=>void; redoAction:()=>void; undo:Snap[]; redo:Snap[]; projects:Project[]; openProject:(p:Project)=>void; removeProject:(id:string)=>void; clearProjects:()=>void; duplicateProject:(p:Project)=>void; toggleFavorite:(id:string)=>void; templateSearch:string; setTemplateSearch:(x:string)=>void; templateCategory:string; setTemplateCategory:(x:string)=>void; filteredTemplates:Template[]; applyTemplate:(t:Template,close?:boolean)=>void; batch:string; setBatch:(x:string)=>void; batchResults:{name:string;url:string}[]; runBatch:()=>Promise<void>; downloadBatch:()=>Promise<void>; scanResult:string; scanError:string; scanTest:{state:"idle"|"running"|"passed"|"failed";message:string}; startCamera:()=>Promise<void>; scanFile:(f:File)=>void; clearScan:()=>void; cameraRef:{current:HTMLVideoElement|null}; scanCanvas:{current:HTMLCanvasElement|null};
+ view:View; setView:(v:View)=>void; newProject:()=>void; createStep:Step; setCreateStep:(s:Step)=>void; type:TypeId; setType:(t:TypeId)=>void; form:FormState; design:DesignState; updateForm:(k:keyof FormState,v:string)=>void; updateDesign:<K extends keyof DesignState>(k:K,v:DesignState[K])=>void; updateDesignMany:(p:Partial<DesignState>)=>void; onLogoFile:(e:ChangeEvent<HTMLInputElement>)=>void; stopScanner:()=>void; batchProgress:string; payload:string; busy:boolean; setBusy:(v:boolean)=>void; notify:(m:string)=>void; resetDesign:()=>void; testCurrentQR:()=>Promise<void>; copyPayload:()=>Promise<void>; exportRawPng:()=>Promise<void>; exportPng:()=>Promise<void>; exportSvg:()=>Promise<void>; exportPdf:()=>Promise<void>; exportDesign:()=>Promise<void>; undoAction:()=>void; redoAction:()=>void; undo:Snap[]; redo:Snap[]; projects:Project[]; openProject:(p:Project)=>void; removeProject:(id:string)=>void; clearProjects:()=>void; duplicateProject:(p:Project)=>void; toggleFavorite:(id:string)=>void; exportProjects:()=>void; importProjects:(file:File)=>Promise<void>; templateSearch:string; setTemplateSearch:(x:string)=>void; templateCategory:string; setTemplateCategory:(x:string)=>void; filteredTemplates:Template[]; applyTemplate:(t:Template,close?:boolean)=>void; batch:string; setBatch:(x:string)=>void; batchResults:{name:string;url:string}[]; runBatch:()=>Promise<void>; downloadBatch:()=>Promise<void>; scanResult:string; scanError:string; scanTest:{state:"idle"|"running"|"passed"|"failed";message:string}; startCamera:()=>Promise<void>; scanFile:(f:File)=>void; clearScan:()=>void; cameraRef:{current:HTMLVideoElement|null}; scanCanvas:{current:HTMLCanvasElement|null};
 }
 
 const viewFromHash=():View=>{const h=window.location.hash.replace(/^#\/?/,"");return (VIEWS as readonly string[]).includes(h)?(h as View):"landing"};
@@ -440,6 +488,29 @@ useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape"&&successRef.c
  const removeProject=(id:string)=>{if(id===savedIdRef.current)setSavedId("");setProjects(p=>p.filter(x=>x.id!==id))};
  const duplicateProject=(p:Project)=>{const copy:Project={...p,id:`${p.id}-copy-${Date.now()}`,name:`${p.name} Copy`,updated:Date.now(),thumbnail:p.thumbnail,form:{...p.form},design:{...p.design},favorite:false,tags:[...(p.tags||[])]};setProjects(x=>[copy,...x.filter(y=>y.id!==copy.id)].slice(0,100));setSavedId(copy.id);setType(copy.type);setForm({...initialForm,...copy.form});setDesign({...initialDesign,...copy.design});setCreateStep(2);setViewClean("create");notify("Project duplicated")};
  const toggleFavorite=(id:string)=>setProjects(list=>list.map(p=>p.id===id?{...p,favorite:!p.favorite,updated:Date.now()}:p));
+ const exportProjects=()=>{
+   const payload={app:"Qraft",version:1,exportedAt:new Date().toISOString(),projects:projects.slice(0,100)};
+   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+   downloadBlob(blob,`qraft-projects-${new Date().toISOString().slice(0,10)}.json`);
+   notify(`${projects.length} project${projects.length===1?"":"s"} exported`);
+ };
+ const importProjects=async(file:File)=>{
+   try{
+     if(file.size>10*1024*1024)throw new Error("Project backup is larger than 10 MB.");
+     const raw=JSON.parse(await file.text()) as {app?:string;version?:number;projects?:unknown};
+     if(raw?.app!=="Qraft"||!Array.isArray(raw.projects))throw new Error("This is not a valid Qraft project backup.");
+     const incoming=(raw.projects as Project[]).filter(p=>p&&typeof p.id==="string"&&typeof p.name==="string"&&typeof p.type==="string"&&p.form&&p.design).slice(0,100);
+     if(!incoming.length)throw new Error("No valid projects were found in this backup.");
+     const normalized=incoming.map(p=>{
+       const safeForm={...initialForm,...p.form,password:"",twofaSecret:""};
+       return {...p,design:{...initialDesign,...p.design},form:safeForm,favorite:!!p.favorite,tags:Array.isArray(p.tags)?p.tags.filter(x=>typeof x==="string").slice(0,8):[]};
+     });
+     const merged=Array.from(new Map([...projects.map(p=>[p.id,p]),...normalized.map(p=>[p.id,p])]).values()).sort((a,b)=>b.updated-a.updated).slice(0,100);
+     setProjects(merged);
+     await saveProjects(merged);
+     notify(`${normalized.length} project${normalized.length===1?"":"s"} imported`);
+   }catch(e){notify(e instanceof Error?e.message:"Could not import that backup")}
+ };
  const clearProjects=()=>{setProjects([]);setSavedId("");void clearStoredProjects()};
  const verifyCurrentQR=async():Promise<string|null>=>{
    const problem=validatePayload(type,form);
@@ -649,7 +720,7 @@ const exportSvg=async()=>{
  };
  const downloadBatch=async()=>{const {default:JSZip}=await import("jszip");const zip=new JSZip();batchResults.forEach(x=>zip.file(`${x.name}.png`,x.url.split(",")[1],{base64:true}));downloadBlob(await zip.generateAsync({type:"blob"}),"qraft-batch.zip");setDownloadSuccess(`${batchResults.length} QR images are bundled and downloaded ✨`);notify("Batch ZIP downloaded")};
  const setViewClean=(v:View)=>{if(window.location.hash!==`#/${v}`)window.location.hash=`#/${v}`;setView(v);window.scrollTo({top:0,behavior:"auto"})};
- const state:AppState={view,setView:setViewClean,newProject,createStep,setCreateStep,type,setType:setTypeSafe,form,design,updateForm,updateDesign,payload,busy,setBusy,notify,resetDesign,testCurrentQR,copyPayload,exportRawPng,exportPng,exportSvg,exportPdf,exportDesign,undoAction,redoAction,undo,redo,projects,openProject,removeProject,clearProjects,duplicateProject,toggleFavorite,templateSearch,setTemplateSearch,templateCategory,setTemplateCategory,filteredTemplates,applyTemplate,batch,setBatch,batchResults,runBatch,downloadBatch,scanResult,scanError,scanTest,startCamera,scanFile,clearScan,cameraRef,scanCanvas,updateDesignMany,onLogoFile,stopScanner,batchProgress};
+ const state:AppState={view,setView:setViewClean,newProject,createStep,setCreateStep,type,setType:setTypeSafe,form,design,updateForm,updateDesign,payload,busy,setBusy,notify,resetDesign,testCurrentQR,copyPayload,exportRawPng,exportPng,exportSvg,exportPdf,exportDesign,undoAction,redoAction,undo,redo,projects,openProject,removeProject,clearProjects,duplicateProject,toggleFavorite,exportProjects,importProjects,templateSearch,setTemplateSearch,templateCategory,setTemplateCategory,filteredTemplates,applyTemplate,batch,setBatch,batchResults,runBatch,downloadBatch,scanResult,scanError,scanTest,startCamera,scanFile,clearScan,cameraRef,scanCanvas,updateDesignMany,onLogoFile,stopScanner,batchProgress};
  const commands:[string,string,()=>void][]=[["Create new QR","Start a fresh QR",()=>{newProject();setCommandOpen(false)}],["Open projects","Search and manage saved QR work",()=>{setViewClean("projects");setCommandOpen(false)}],["Open templates","Browse the design library",()=>{setViewClean("templates");setCommandOpen(false)}],["Open scanner","Scan and test a QR",()=>{setViewClean("scanner");setCommandOpen(false)}],["Open tools","Batch generation and utilities",()=>{setViewClean("tools");setCommandOpen(false)}]];
  const wrap=(content:ReactNode)=><>{content}{commandOpen&&<div className="command-overlay" role="dialog" aria-modal="true" aria-label="Qraft command palette" onMouseDown={e=>{if(e.target===e.currentTarget)setCommandOpen(false)}}><div className="command-palette"><div className="command-head"><Command size={18}/><div><b>Qraft commands</b><span>Jump anywhere with Ctrl / ⌘ + K</span></div><button className="icon-button" onClick={()=>setCommandOpen(false)}><X size={16}/></button></div><div className="command-list">{commands.map(([title,desc,action],i)=><button key={title} onClick={action}><span className="command-key">{i+1}</span><span><b>{title}</b><small>{desc}</small></span><ArrowRight size={14}/></button>)}</div></div></div>}{toast&&<div className="qraft-toast" role="status">{toast}</div>}{downloadSuccess&&<div className="download-success-overlay" role="dialog" aria-modal="true" aria-label="Download complete"><div className="download-success-card"><div className="success-orbit"><Check size={28}/></div><span className="page-eyebrow">CONGRATULATIONS</span><h2>Your QR is ready 🎀</h2><p>{downloadSuccess}</p><div className="success-actions"><button className="primary" autoFocus onClick={()=>setDownloadSuccess("")}>Keep editing <Paintbrush size={15}/></button><button className="soft" onClick={()=>{setDownloadSuccess("");newProject()}}><QrCode size={15}/> Create new QR</button><button className="soft" onClick={()=>{setDownloadSuccess("");setViewClean("projects")}}><FolderOpen size={15}/> View projects</button><button className="soft" onClick={()=>{setDownloadSuccess("");setViewClean("scanner")}}><ScanLine size={15}/> Scan & test</button></div></div></div>}</>;
  if(view==="landing")return wrap(<Landing go={setViewClean}/>);

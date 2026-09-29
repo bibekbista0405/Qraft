@@ -1,6 +1,22 @@
-// Network-first with cache fallback: always fresh online, fully usable offline after the first visit.
-const C="qraft-v2";
-self.addEventListener("install",()=>self.skipWaiting());
-self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
-self.addEventListener("fetch",e=>{const r=e.request;if(r.method!=="GET"||new URL(r.url).origin!==location.origin)return;
-  e.respondWith(fetch(r).then(res=>{if(res.ok){const c=res.clone();caches.open(C).then(x=>x.put(r,c))}return res}).catch(()=>caches.match(r).then(m=>m||caches.match("./index.html"))))});
+const C="qraft-v4";
+const BASE=new URL("./",self.registration.scope).href;
+const SHELL=new URL("index.html",BASE).href;
+self.addEventListener("install",event=>{
+  event.waitUntil(caches.open(C).then(cache=>cache.addAll([SHELL])).then(()=>self.skipWaiting()));
+});
+self.addEventListener("activate",event=>{
+  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==C).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
+});
+self.addEventListener("fetch",event=>{
+  const request=event.request;
+  if(request.method!=="GET"||new URL(request.url).origin!==location.origin)return;
+  event.respondWith(
+    fetch(request).then(response=>{
+      if(response.ok){
+        const copy=response.clone();
+        caches.open(C).then(cache=>cache.put(request,copy)).catch(()=>{});
+      }
+      return response;
+    }).catch(()=>caches.match(request).then(cached=>cached||caches.match(SHELL)))
+  );
+});

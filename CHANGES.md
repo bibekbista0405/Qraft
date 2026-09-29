@@ -33,3 +33,27 @@
 - Added the dedicated Create / Templates / Tools / Projects / Scan & Test pages.
 - Added auto-save, undo/redo, templates, batch generation, local projects, card exports, logo controls, frames, body shapes, and a recovery boundary.
 - Added Privacy Policy, Terms & Conditions, and Developer Details as dedicated pages.
+
+## Phase 4 — Power tools — 2026-09-30
+- Added a QR Lab diagnostic card with contrast, quiet-zone, logo-size, and payload-density checks plus the existing decoder verification.
+- Added project-library JSON backup and restore. Imports validate the Qraft backup envelope, merge by project id, normalize legacy form/design fields, and cap the library at 100 projects.
+- Added batch contact-sheet export alongside the existing ZIP export.
+- Kept the batch generator capped at 1,000 rows with safe duplicate filenames and progress feedback.
+- Preserved local-first storage and the existing sensitive-field redaction behavior.
+- Regression-checked Phases 1–3 in source: deterministic build settings, Node 22 pin, QR renderer unification/safety, mobile scrolling, project search/favorites/duplicate, command palette, ink gradients, and QR health are present.
+
+## Phase 5
+- Added PWA install prompt when the browser supports installation.
+- Added live offline status in the header while preserving local QR creation and saved projects.
+- Hardened service-worker registration with an explicit base-path scope.
+- Bumped the service-worker cache key so deployments do not retain stale Phase 4 assets.
+
+## Stability pass — Phases 1–5 — 2026-09-30
+- Rechecked Phases 1–5 against the actual source instead of relying on prior phase notes.
+- Hardened the PWA service worker with an install-time app-shell cache and safe offline navigation fallback; bumped cache revision to v4.
+- Hardened the PWA install prompt lifecycle, including `appinstalled` cleanup and prompt error handling.
+- Project backup restore now strips Wi-Fi passwords and 2FA secrets before persistence, preserving Qraft's local privacy guarantee across imported backups.
+- Imported project backups are persisted immediately instead of waiting for an editor autosave cycle.
+- Batch contact sheets now avoid oversized browser canvases: small batches download one PNG, while larger batches are split into safe sheets and bundled into a ZIP.
+- Contact-sheet image failures no longer prevent the remaining sheets from completing.
+- Preserved existing Phase 1 renderer/build safeguards, Phase 2 project tools, Phase 3 design/health checks, and Phase 4 batch/backup tools.
