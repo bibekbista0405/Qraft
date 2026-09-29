@@ -43,5 +43,10 @@
   ],
   "engines": {
     "node": ">=22.12"
+  },
+  "allowScripts": {
+    "canvas@3.2.3": true,
+    "core-js@3.50.0": true,
+    "esbuild@0.25.12": true
   }
 }
