@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import jsQR from "jsqr";
 import { renderQR, qrSvg, verifyQR, type DesignState, type Pattern } from "./render";
 
-const design:DesignState={title:"t",subtitle:"s",fg:"#15343a",bg:"#fffdf8",pattern:"square",bodyShape:"square",finder:"square",ec:"H",size:600,margin:4,transparent:false,logo:null,logoName:"",logoSize:12,frame:true,frameStyle:"badge",cta:"SCAN",radius:28,gradient:false,accent:"#0f8b8d"};
+const design:DesignState={title:"t",subtitle:"s",fg:"#15343a",bg:"#fffdf8",bodyShape:"square",finder:"square",ec:"H",size:600,margin:4,transparent:false,logo:null,logoName:"",logoSize:12,frame:true,frameStyle:"badge",cta:"SCAN",radius:28,gradient:false,accent:"#0f8b8d"};
 const decode=(c:HTMLCanvasElement)=>{const x=c.getContext("2d")!;const d=x.getImageData(0,0,c.width,c.height);return jsQR(d.data,d.width,d.height)?.data};
 
 describe("renderQR round trip",()=>{
@@ -11,14 +11,14 @@ describe("renderQR round trip",()=>{
   for(const shape of shapes)for(const finder of ["square","rounded"] as const){
     it(`decodes ${shape} body / ${finder} finder`,async()=>{
       const p="https://example.com/a?b=1";
-      const c=await renderQR(p,{...design,pattern:shape,bodyShape:shape,finder},700);
+      const c=await renderQR(p,{...design,bodyShape:shape,finder},700);
       expect(decode(c)).toBe(p);
     });
   }
   it("keeps dots/diamond scannable on larger versions (solid alignment patterns)",async()=>{
     const p="https://example.com/a/very/long/path/that/needs/a/bigger/qr/code?x=1&y=2&z=3";
     for(const shape of ["dots","diamond"] as const){
-      expect(decode(await renderQR(p,{...design,pattern:shape,bodyShape:shape},900))).toBe(p);
+      expect(decode(await renderQR(p,{...design,bodyShape:shape},900))).toBe(p);
     }
   });
   it("decodes multi-line payloads (vCard / event)",async()=>{

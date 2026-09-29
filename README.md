@@ -40,11 +40,11 @@ Projects are saved automatically as the QR content or design changes; there is n
 - Batch generator for up to 1,000 rows + ZIP export
 - Local projects with thumbnails and restore (Wi-Fi passwords and 2FA secrets are never stored)
 - Undo / redo (buttons, Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z)
-- Per-type input validation, URL normalisation and pre-export verification of the exact exported pixels
+- Per-type input validation, URL normalisation and pre-export verification of the final composed card QR crop
 - Hash routing, so refresh and the browser back button keep you where you were
 - Responsive landing page and application pages
 - Scrollbars hidden across the UI while normal scrolling remains enabled
-- Cute/sweet display typography using Baloo 2 + Nunito
+- Clean product typography using local system display/body stacks (Aptos/Segoe UI/Inter fallback)
 
 ## Tech stack
 
@@ -59,7 +59,7 @@ Projects are saved automatically as the QR content or design changes; there is n
 
 ## Run locally
 
-Requirements: Node.js 20+ recommended.
+Requirements: Node.js 22.12+ recommended (matches the current Vitest toolchain).
 
 ```bash
 npm install
@@ -112,3 +112,13 @@ Qraft supports live preview controls for QR body shapes (square, rounded, dots, 
 
 ## Offline Image QR
 The Image QR type embeds a compact JPEG image payload inside the QR for Qraft's own scanner. No image-hosting URL is required for that Qraft-to-Qraft offline image workflow. Embedded image QRs intentionally use a conservative square body/finder and low error correction to protect decoding reliability.
+
+## Current UI / reliability pass
+- Removed the old pastel/gradient override cascade and rebuilt the stylesheet as one product-oriented design system.
+- Studio uses an app viewport on desktop: only the active work area scrolls; page-level scroll is suppressed while editing.
+- Preview scale is constrained by both available width and height so the complete card remains visible.
+- Removed redundant `pattern` state from `DesignState`; body shape is now the single source of truth. Older saved projects migrate their legacy pattern field on open.
+- Finder shapes are limited to the implemented scan-safe square/rounded options.
+- Project storage uses IndexedDB with a localStorage fallback and a real clear operation. Auto-save writes are debounced.
+- Final card PNG/PDF/SVG exports verify the QR after the final card composition; SVG is rasterized in-browser for the same verification step.
+- GitHub Pages/sub-path entry assets use relative paths and the service-worker cache revision has been bumped.

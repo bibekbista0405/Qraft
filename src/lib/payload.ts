@@ -135,4 +135,4 @@ export function contrastRatio(a:string,b:string){
   const lum=(hex:string)=>{const n=hex.replace("#","");const r=parseInt(n.slice(0,2),16)/255,g=parseInt(n.slice(2,4),16)/255,bl=parseInt(n.slice(4,6),16)/255;const f=(v:number)=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);return .2126*f(r)+.7152*f(g)+.0722*f(bl)};
   const x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05);
 }
-export function relLum(hex:string){return contrastRatio(hex,"#000000")}
+export function relLum(hex:string){const n=hex.replace("#","");const r=parseInt(n.slice(0,2),16)/255,g=parseInt(n.slice(2,4),16)/255,b=parseInt(n.slice(4,6),16)/255;const f=(v:number)=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);return .2126*f(r)+.7152*f(g)+.0722*f(b)}

@@ -4,11 +4,11 @@ import jsQR from "jsqr";
 import { isEmbeddedImagePayload, contrastRatio, relLum } from "./payload";
 
 export type Pattern = "square"|"rounded"|"dots"|"diamond"|"bars";
-export type Finder = "square"|"rounded"|"circle";
+export type Finder = "square"|"rounded";
 export type EC = "L"|"M"|"Q"|"H";
 export type FrameStyle = "none"|"soft"|"badge"|"scan"|"ticket";
 export type BodyShape = Pattern;
-export type DesignState = {title:string;subtitle:string;fg:string;bg:string;pattern:Pattern;bodyShape:BodyShape;finder:Finder;ec:EC;size:number;margin:number;transparent:boolean;logo:string|null;logoName:string;logoSize:number;frame:boolean;frameStyle:FrameStyle;cta:string;radius:number;gradient:boolean;accent:string;advanced?:boolean;logoPreset?:boolean};
+export type DesignState = {title:string;subtitle:string;fg:string;bg:string;bodyShape:BodyShape;finder:Finder;ec:EC;size:number;margin:number;transparent:boolean;logo:string|null;logoName:string;logoSize:number;frame:boolean;frameStyle:FrameStyle;cta:string;radius:number;gradient:boolean;accent:string;advanced?:boolean;logoPreset?:boolean};
 
 /** The QR spec requires a 4-module quiet zone. */
 export const MIN_MARGIN = 4;
@@ -32,7 +32,7 @@ export async function prepareLogo(file:Blob):Promise<string>{
 function setup(payload:string,d:DesignState){
   const embedded=isEmbeddedImagePayload(payload);
   const ec:EC=embedded?"L":(d.logo?"H":d.ec);
-  const shape:BodyShape=embedded?"square":(d.bodyShape||d.pattern);
+  const shape:BodyShape=embedded?"square":(d.bodyShape||"square");
   const finder:Finder=embedded?"square":d.finder;
   const logo=embedded?null:d.logo;
   const qr=QRCode.create(payload||" ",{errorCorrectionLevel:ec});

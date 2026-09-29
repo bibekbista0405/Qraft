@@ -1,50 +1,35 @@
-# Audit fixes
+# Qraft change log
 
-## Build / security
-- Fixed the TypeScript error that failed `npm run build` (and CI): `saveProject` is now typed `Promise<boolean>`.
-- `jspdf` 2.x -> 4.x (removes the critical DOMPurify advisory); `vitest` 5 for tests. `npm audit`: 0 vulnerabilities.
-- `jspdf` and `jszip` are lazy-loaded; main bundle 951 kB -> ~500 kB.
-- `package-lock.json` included; CI uses `npm ci`, runs tests, builds and audits production deps.
-- Relative Vite `base` + `import.meta.env.BASE_URL` for the logo, so sub-path hosting (GitHub Pages) works.
-- Fonts are self-hosted via @fontsource (no Google Fonts request; matches the offline/privacy claims).
-- `noUnusedLocals` enabled; dead code removed (`quickStyles`, `TypePicker`, `FlowSteps`, unused icons/destructures).
-- Removed most `any` types (icons, `updateDesign`, `Field` children, `qr` matrix).
+## Current repair — 2026-09-30
 
-## Rendering / export
-- Transparent background: finder patterns are drawn as a ring (even-odd) so they stay hollow instead of turning into solid blocks (PNG and SVG).
-- Dots / Diamond body shapes: alignment patterns are drawn solid; previously QRs above version 1 with those shapes could not be decoded.
-- Square modules are now solid (no 5% gaps).
-- SVG export is real vector (QR embedded as paths, not a raster image), honours frame style, logo size, title size and transparency.
-- PNG card no longer draws a CTA when the frame is "None"; "Scan" frame text is no longer background-on-background.
-- Card QR rendered at its exact 840px size (no resampling blur).
-- Logos are downscaled to a 256px PNG on upload (keeps projects small; fixes silent localStorage quota failures).
+### Product UI
+- Rebuilt `src/styles.css` as a single product-oriented design system instead of layering multiple legacy theme overrides.
+- Replaced the pastel/pill-heavy visual treatment with a neutral white/slate surface system and cobalt accent.
+- Switched website typography away from Baloo 2 / Nunito to a professional Aptos / Segoe UI / Inter fallback stack and removed the font-package imports/dependencies.
+- Desktop Create uses an app-like viewport: page scrolling is suppressed during editing and the active work area is the scrollable region.
+- Preview scaling now considers both available width and height, preventing the complete card or QR from being cropped.
 
-## Verification
-- Verifies the exact exported size, checks contrast (>= 3:1), and only allows inverted decoding for genuinely light-on-dark designs.
-- Extra 300px decode pass -> "dense QR" warning; warnings for light-on-dark and transparent output.
-- Friendly error for over-long content.
+### Create / design / export
+- Removed duplicate `pattern` state from `DesignState`; `bodyShape` is now the single source of truth. Legacy saved `pattern` values are migrated when projects are reopened.
+- Finder options are limited to implemented scan-safe square and rounded variants; old template `circle` values normalize to rounded.
+- QR card PNG/PDF/SVG exports re-decode the QR after the final card composition (SVG is rasterized in-browser for verification), not just the raw QR render.
+- Offline Image QR compression accepts a wider range of ordinary images while staying within a practical byte budget for a standard QR.
+- Social QR presets retain platform-specific colours and bundled SVG marks.
 
-## Payloads / validation
-- New `src/lib/payload.ts` (unit-tested): Wi-Fi escaping (`: "` added, `nopass` has no password), full iCalendar events with normalised dates, `geo:` with authoritative coordinates, YouTube `@handle`, WhatsApp honours the URL field, mailto without empty query, 2FA secret normalised, bare domains get `https://`.
-- Per-type validation with an inline "Needed before export" message; empty defaults (e.g. `+977 `) can no longer be exported.
+### Persistence / reliability
+- Auto-save remains automatic and now debounces IndexedDB writes to reduce churn while typing or dragging controls.
+- Auto-save revisions prevent an older asynchronous thumbnail render from overwriting a newer edit.
+- Added IndexedDB clear support and a localStorage fallback when IndexedDB is unavailable.
+- Browser-stored projects remain local; sensitive Wi-Fi passwords and 2FA secrets are redacted before persistence.
+- Relative entry-point asset paths are used for sub-path deployments, including GitHub Pages.
+- Bumped the service-worker cache revision after the UI/runtime changes.
 
-## State / persistence
-- Autosave only after a real edit (no more blank default projects); secrets (Wi-Fi password, 2FA secret) are not stored and their thumbnails use a placeholder; privacy text updated.
-- Autosave race fixed (project id assigned synchronously). Storage quota errors are handled and reported.
-- Undo/redo: UI buttons + keyboard shortcuts, snapshots include QR type, typing is coalesced, history cleared when a project is opened.
-- Applying a template also switches to the matching QR type and removes preset social logos; leaving a social type restores default styling.
-- Error-correction dropdown is locked (and says so) while a logo is present.
-- Hash routing (`#/create`, ...).
+### Scanner
+- Camera and image scanning remain available with `BarcodeDetector` when supported and a `jsQR` fallback with grayscale, inversion, upscale, and centered-crop retries.
+- Full-screen image drag/drop remains enabled on the Scan & Test page.
+- Qraft-specific embedded Image QR payloads are rendered as images by Qraft's scanner. Generic camera apps may display a `data:` payload as text because QR scanners do not all render data URLs.
 
-## Scanner / batch
-- Camera is stopped when leaving the Scan page; `BarcodeDetector` formats are awaited and the detector is cached; frames are downscaled to 720px.
-- Batch: URLs containing commas work, duplicate names get suffixes, over-limit/skipped rows are reported, UI yields with progress, ZIP is lazy-loaded.
-
-## UX / a11y
-- Visible `:focus-visible` ring, Esc closes the success dialog (and it autofocuses), toast timer no longer cuts newer toasts short, two templates no longer share the name "Review".
-
-## Not done (bigger projects, tracked as upgrades)
-- Move projects from localStorage to IndexedDB with schema migration.
-- Move the camera decode loop into a Web Worker.
-- Full focus trap for the dialog; PWA/offline caching.
-- Finish splitting `App.tsx` (payload + rendering are extracted; the page components still live there).
+## Earlier releases
+- Added the dedicated Create / Templates / Tools / Projects / Scan & Test pages.
+- Added auto-save, undo/redo, templates, batch generation, local projects, card exports, logo controls, frames, body shapes, and a recovery boundary.
+- Added Privacy Policy, Terms & Conditions, and Developer Details as dedicated pages.
