@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b --force && vite build",
+    "build": "npm run typecheck && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc -b --force --noEmit"
+    "typecheck": "tsc -b --force"
   },
   "dependencies": {
     "jspdf": "^4.2.1",
@@ -42,7 +42,7 @@
     "typescript"
   ],
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   },
   "allowScripts": {
     "canvas": true,

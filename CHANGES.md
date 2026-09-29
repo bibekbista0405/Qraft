@@ -65,3 +65,11 @@
 - Added frame styles: Ribbon, Outline, Corner and Stamp.
 - Template presets now carry their intended frame style instead of relying only on category defaults.
 - PNG/SVG card exports render the expanded frame styles consistently with the live preview.
+
+## Stability patch — Vercel / Node runtime
+
+- Aligned the repository Node engine with Vercel's current Node 24 project setting (`24.x`).
+- Updated `.nvmrc` to Node 24 so local, CI, and Vercel use the same major runtime.
+- Made `npm run build` call the dedicated `typecheck` script before Vite, keeping the build pipeline explicit and easier to diagnose.
+- Kept `vercel.json` minimal so it does not override dependency/runtime behavior unnecessarily.
+- Updated the package-lock root engine metadata to match `package.json`.
