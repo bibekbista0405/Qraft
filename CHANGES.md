@@ -57,3 +57,11 @@
 - Batch contact sheets now avoid oversized browser canvases: small batches download one PNG, while larger batches are split into safe sheets and bundled into a ZIP.
 - Contact-sheet image failures no longer prevent the remaining sheets from completing.
 - Preserved existing Phase 1 renderer/build safeguards, Phase 2 project tools, Phase 3 design/health checks, and Phase 4 batch/backup tools.
+
+## Template & Design Expansion
+- Added 12 new visual templates across Modern, Nature, Premium, Commerce, Minimal, Events and Friendly categories.
+- Added QR body shapes: Pill, Hex and Leaf, with conservative dense-code fallback preserved.
+- Added finder styles: Circle and Diamond.
+- Added frame styles: Ribbon, Outline, Corner and Stamp.
+- Template presets now carry their intended frame style instead of relying only on category defaults.
+- PNG/SVG card exports render the expanded frame styles consistently with the live preview.

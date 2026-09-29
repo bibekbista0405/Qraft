@@ -3,10 +3,10 @@ import QRCode from "qrcode";
 import jsQR from "jsqr";
 import { isEmbeddedImagePayload, contrastRatio, relLum } from "./payload";
 
-export type Pattern = "square"|"rounded"|"dots"|"diamond"|"bars";
-export type Finder = "square"|"rounded";
+export type Pattern = "square"|"rounded"|"dots"|"diamond"|"bars"|"pill"|"hex"|"leaf";
+export type Finder = "square"|"rounded"|"circle"|"diamond";
 export type EC = "L"|"M"|"Q"|"H";
-export type FrameStyle = "none"|"soft"|"badge"|"scan"|"ticket";
+export type FrameStyle = "none"|"soft"|"badge"|"scan"|"ticket"|"ribbon"|"outline"|"corner"|"stamp";
 export type BodyShape = Pattern;
 export type DesignState = {title:string;subtitle:string;fg:string;bg:string;bodyShape:BodyShape;finder:Finder;ec:EC;size:number;margin:number;transparent:boolean;logo:string|null;logoName:string;logoSize:number;frame:boolean;frameStyle:FrameStyle;cta:string;radius:number;gradient:boolean;inkGradient?:boolean;gradientEnd?:string;accent:string;advanced?:boolean;logoPreset?:boolean};
 
@@ -95,6 +95,9 @@ export async function renderQR(payload:string,d:DesignState,size=d.size):Promise
     if(shape==="dots"){ctx.arc(cx+cell/2,cy+cell/2,cell*.41,0,Math.PI*2);ctx.fill();return;}
     if(shape==="diamond"){ctx.moveTo(cx+cell/2,cy+cell*.07);ctx.lineTo(cx+cell*.93,cy+cell/2);ctx.lineTo(cx+cell/2,cy+cell*.93);ctx.lineTo(cx+cell*.07,cy+cell/2);ctx.closePath();ctx.fill();return;}
     if(shape==="bars"){ctx.roundRect(cx+cell*.12,cy+cell*.05,cell*.76,cell*.9,cell*.18);ctx.fill();return;}
+    if(shape==="pill"){ctx.roundRect(cx+cell*.06,cy+cell*.18,cell*.88,cell*.64,cell*.32);ctx.fill();return;}
+    if(shape==="hex"){ctx.moveTo(cx+cell*.5,cy+cell*.04);ctx.lineTo(cx+cell*.93,cy+cell*.27);ctx.lineTo(cx+cell*.93,cy+cell*.73);ctx.lineTo(cx+cell*.5,cy+cell*.96);ctx.lineTo(cx+cell*.07,cy+cell*.73);ctx.lineTo(cx+cell*.07,cy+cell*.27);ctx.closePath();ctx.fill();return;}
+    if(shape==="leaf"){ctx.moveTo(cx+cell*.5,cy+cell*.04);ctx.bezierCurveTo(cx+cell*.98,cy+cell*.16,cx+cell*.9,cy+cell*.82,cx+cell*.5,cy+cell*.96);ctx.bezierCurveTo(cx+cell*.1,cy+cell*.82,cx+cell*.02,cy+cell*.16,cx+cell*.5,cy+cell*.04);ctx.closePath();ctx.fill();return;}
     const w=cell*.9,o=(cell-w)/2;ctx.roundRect(cx+o,cy+o,w,w,Math.min(w*.33,cell*.24));ctx.fill();
   };
   for(let r=0;r<modules;r++)for(let c=0;c<modules;c++){
@@ -106,11 +109,19 @@ export async function renderQR(payload:string,d:DesignState,size=d.size):Promise
   for(const [fr,fc] of [[0,0],[0,modules-7],[modules-7,0]]){
     const x=off+fc*cell,y=off+fr*cell;
     if(inkGradient) ctx.fillStyle=inkGradient; else ctx.fillStyle=d.fg;
-    ctx.beginPath();
-    ctx.roundRect(x,y,cell*7,cell*7,rr);
-    ctx.roundRect(x+cell,y+cell,cell*5,cell*5,rr*.68);
-    ctx.fill("evenodd");
-    ctx.beginPath();ctx.roundRect(x+cell*2,y+cell*2,cell*3,cell*3,rr*.35);ctx.fill();
+    if(finder==="circle"){
+      ctx.beginPath();ctx.arc(x+cell*3.5,y+cell*3.5,cell*3.5,0,Math.PI*2);
+      ctx.arc(x+cell*3.5,y+cell*3.5,cell*2.5,0,Math.PI*2,true);ctx.fill("evenodd");
+      ctx.beginPath();ctx.arc(x+cell*3.5,y+cell*3.5,cell*1.5,0,Math.PI*2);ctx.fill();
+    }else if(finder==="diamond"){
+      const pts=(cx:number,cy:number,r:number)=>[[cx,cy-r],[cx+r,cy],[cx,cy+r],[cx-r,cy]];
+      const a=pts(x+cell*3.5,y+cell*3.5,cell*3.5),b=pts(x+cell*3.5,y+cell*3.5,cell*2.5);
+      ctx.beginPath();a.forEach(([px,py],i)=>i?ctx.lineTo(px,py):ctx.moveTo(px,py));ctx.closePath();b.reverse().forEach(([px,py])=>ctx.lineTo(px,py));ctx.closePath();ctx.fill("evenodd");
+      ctx.beginPath();pts(x+cell*3.5,y+cell*3.5,cell*1.5).forEach(([px,py],i)=>i?ctx.lineTo(px,py):ctx.moveTo(px,py));ctx.closePath();ctx.fill();
+    }else{
+      ctx.beginPath();ctx.roundRect(x,y,cell*7,cell*7,rr);ctx.roundRect(x+cell,y+cell,cell*5,cell*5,rr*.68);ctx.fill("evenodd");
+      ctx.beginPath();ctx.roundRect(x+cell*2,y+cell*2,cell*3,cell*3,rr*.35);ctx.fill();
+    }
   }
   if(logo){
     try{
@@ -140,13 +151,18 @@ export async function qrSvg(payload:string,d:DesignState):Promise<string>{
     else if(shape==="dots")shapes+=`<circle cx="${f(x+cell/2)}" cy="${f(y+cell/2)}" r="${f(cell*.41)}"/>`;
     else if(shape==="diamond")shapes+=`<polygon points="${f(x+cell/2)},${f(y+cell*.07)} ${f(x+cell*.93)},${f(y+cell/2)} ${f(x+cell/2)},${f(y+cell*.93)} ${f(x+cell*.07)},${f(y+cell/2)}"/>`;
     else if(shape==="bars")shapes+=`<rect x="${f(x+cell*.12)}" y="${f(y+cell*.05)}" width="${f(cell*.76)}" height="${f(cell*.9)}" rx="${f(cell*.18)}"/>`;
+    else if(shape==="pill")shapes+=`<rect x="${f(x+cell*.06)}" y="${f(y+cell*.18)}" width="${f(cell*.88)}" height="${f(cell*.64)}" rx="${f(cell*.32)}"/>`;
+    else if(shape==="hex")shapes+=`<polygon points="${f(x+cell*.5)},${f(y+cell*.04)} ${f(x+cell*.93)},${f(y+cell*.27)} ${f(x+cell*.93)},${f(y+cell*.73)} ${f(x+cell*.5)},${f(y+cell*.96)} ${f(x+cell*.07)},${f(y+cell*.73)} ${f(x+cell*.07)},${f(y+cell*.27)}"/>`;
+    else if(shape==="leaf")shapes+=`<path d="M${f(x+cell*.5)} ${f(y+cell*.04)} C${f(x+cell*.98)} ${f(y+cell*.16)} ${f(x+cell*.9)} ${f(y+cell*.82)} ${f(x+cell*.5)} ${f(y+cell*.96)} C${f(x+cell*.1)} ${f(y+cell*.82)} ${f(x+cell*.02)} ${f(y+cell*.16)} ${f(x+cell*.5)} ${f(y+cell*.04)}z"/>`;
     else shapes+=`<rect x="${f(x+cell*.05)}" y="${f(y+cell*.05)}" width="${f(cell*.9)}" height="${f(cell*.9)}" rx="${f(cell*.22)}"/>`;
   }
   out+=`<g fill="${d.fg}">${squares?`<path d="${squares}"/>`:""}${shapes}`;
   const rr=finder==="rounded"?cell*.65:0;
   for(const [fr,fc] of [[0,0],[0,modules-7],[modules-7,0]]){
     const x=off+fc*cell,y=off+fr*cell;
-    out+=`<path fill-rule="evenodd" d="${rrPath(x,y,cell*7,cell*7,rr)}${rrPath(x+cell,y+cell,cell*5,cell*5,rr*.68)}"/><path d="${rrPath(x+cell*2,y+cell*2,cell*3,cell*3,rr*.35)}"/>`;
+    if(finder==="circle"){const cx=x+cell*3.5,cy=y+cell*3.5;out+=`<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(cell*3.5)}" fill="${d.fg}"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(cell*2.5)}" fill="${d.bg||"#ffffff"}"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(cell*1.5)}" fill="${d.fg}"/>`;}
+    else if(finder==="diamond"){const pts=(r:number)=>`${f(x+cell*3.5)},${f(y+cell*3.5-r)} ${f(x+cell*3.5+r)},${f(y+cell*3.5)} ${f(x+cell*3.5)},${f(y+cell*3.5+r)} ${f(x+cell*3.5-r)},${f(y+cell*3.5)}`;out+=`<polygon points="${pts(cell*3.5)}" fill="${d.fg}"/><polygon points="${pts(cell*2.5)}" fill="${d.bg||"#ffffff"}"/><polygon points="${pts(cell*1.5)}" fill="${d.fg}"/>`; }
+    else out+=`<path fill-rule="evenodd" d="${rrPath(x,y,cell*7,cell*7,rr)}${rrPath(x+cell,y+cell,cell*5,cell*5,rr*.68)}"/><path d="${rrPath(x+cell*2,y+cell*2,cell*3,cell*3,rr*.35)}"/>`;
   }
   out+="</g>";
   if(logo){
@@ -165,6 +181,10 @@ export function frameGeometry(fs:FrameStyle):FrameGeo{
   if(fs==="soft")return{x:390,y:1187,w:620,h:108,r:48,style:fs};
   if(fs==="scan")return{x:390,y:1188,w:620,h:104,r:28,style:fs};
   if(fs==="ticket")return{x:420,y:1190,w:560,h:100,r:20,style:fs};
+  if(fs==="ribbon")return{x:300,y:1186,w:800,h:112,r:18,style:fs};
+  if(fs==="outline")return{x:350,y:1188,w:700,h:106,r:28,style:fs};
+  if(fs==="corner")return{x:390,y:1188,w:620,h:106,r:18,style:fs};
+  if(fs==="stamp")return{x:420,y:1190,w:560,h:100,r:12,style:fs};
   return{x:520,y:1205,w:360,h:78,r:39,style:"badge"};
 }
 export const titleFontSize=(title:string)=>Math.max(42,Math.min(68,68-(title.length>26?(title.length-26)*1.2:0)));
