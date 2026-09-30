@@ -83,3 +83,13 @@
 - Kept QR artwork surfaces isolated from the application theme so dark mode does not invert, recolor, or alter QR generation/export output.
 - Added early theme application in `index.html` to reduce light-mode flash when a dark/system preference is active.
 - No QR payload, rendering, scan, export, storage, template, batch, or PWA logic was intentionally changed.
+
+## Template editor UX update — focused editing flow
+- Kept the existing template gallery/cards unchanged.
+- Reworked the selected-template editor into a focused editing workflow with a live preview first and dedicated Content, Appearance, Shape, Branding, and Advanced sections.
+- Added template/customized state feedback so users can see when they have moved away from the original preset.
+- Added Reset template to restore the selected template without leaving the editor.
+- Kept Undo/Redo and local autosave available in the editor action area.
+- Added sticky desktop editing/save behavior and responsive mobile tab layout.
+- Kept QR rendering/export logic and template definitions intact.
+- Removed the stale System-theme branch so the Light/Dark theme type and resolver are consistent.
