@@ -28,12 +28,25 @@ const tx=<T,>(mode:IDBTransactionMode,fn:(s:IDBObjectStore)=>IDBRequest<T>)=>ope
 export async function loadProjects<T>():Promise<T[]>{
   try{
     const v=await tx<unknown>("readonly",s=>s.get(KEY));
-    if(Array.isArray(v))return v as T[];
-  }catch{/* fall through */}
-  try{
-    const v=JSON.parse(localStorage.getItem(LEGACY)||"[]");
-    return Array.isArray(v)?v as T[]:[];
-  }catch{return[]}
+    if(Array.isArray(v)&&v.length>0)return v as T[];
+    // A working IndexedDB with an empty store can still be an upgrade from the
+    // old localStorage implementation. Import the legacy copy before returning.
+    const legacyRaw=localStorage.getItem(LEGACY);
+    if(legacyRaw){
+      const legacy=JSON.parse(legacyRaw);
+      if(Array.isArray(legacy)&&legacy.length){
+        await tx("readwrite",s=>s.put(legacy,KEY));
+        localStorage.removeItem(LEGACY);
+        return legacy as T[];
+      }
+    }
+    return [];
+  }catch{
+    try{
+      const v=JSON.parse(localStorage.getItem(LEGACY)||"[]");
+      return Array.isArray(v)?v as T[]:[];
+    }catch{return[]}
+  }
 }
 
 export async function saveProjects<T>(list:T[]){
@@ -45,6 +58,13 @@ export async function saveProjects<T>(list:T[]){
 }
 
 export async function clearProjects(){
-  try{await tx("readwrite",s=>s.delete(KEY))}catch{/* fallback still cleared below */}
+  let idbError:unknown=null;
+  try{await tx("readwrite",s=>s.delete(KEY))}catch(e){idbError=e}
+  if(idbError){
+    try{
+      localStorage.removeItem(LEGACY);
+    }catch{/* ignore */}
+    throw new Error("Could not clear the IndexedDB project library. Your projects were not confirmed as deleted.");
+  }
   try{localStorage.removeItem(LEGACY)}catch{/* ignore */}
 }

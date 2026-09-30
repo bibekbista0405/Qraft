@@ -62,5 +62,7 @@ describe("qrSvg",()=>{
     expect(svg).not.toContain("<image");
     expect(svg).not.toMatch(/<rect width="1000" height="1000"/); // no background rect when transparent
   });
-  it("includes a background rect when opaque",async()=>{expect(await qrSvg("hi",design)).toMatch(/<rect width="1000" height="1000" fill="#fffdf8"/)});
+  it("includes a background rect when opaque",async()=>{expect(await qrSvg("hi",design)).toMatch(/<rect width="1000" height="1000" fill="#fffdf8"/)})
+  it("applies the ink gradient to the vector modules",async()=>{const svg=await qrSvg("hi",{...design,inkGradient:true,gradientEnd:"#2563eb"});expect(svg).toContain('id="qraftInkGradient"');expect(svg).toContain('fill="url(#qraftInkGradient)"')});
+  it("keeps transparent finder holes transparent in SVG",async()=>{const svg=await qrSvg("hi",{...design,transparent:true});expect(svg).not.toContain('fill="#fffdf8"');expect(svg).toContain('fill-rule="evenodd"')});
 });
