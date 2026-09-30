@@ -55,6 +55,37 @@ const types:TypeMeta[]=[
  {id:"paypal",label:"PayPal",note:"Open a payment link",icon:Zap,group:"Payments"},{id:"bitcoin",label:"Bitcoin",note:"Bitcoin payment URI",icon:Zap,group:"Payments"},{id:"twofa",label:"2FA",note:"Authenticator setup",icon:Settings2,group:"Advanced"}
 ];
 
+const isRecord=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==="object"&&!Array.isArray(v);
+const allowedTypes=new Set<TypeId>(types.map(t=>t.id));
+const allowedPatterns=new Set<Pattern>(["square","rounded","dots","diamond","bars","pill","hex","leaf"]);
+const allowedFinders=new Set<Finder>(["square","rounded","circle","diamond"]);
+const allowedEC=new Set<EC>(["L","M","Q","H"]);
+const allowedFrames=new Set<FrameStyle>(["none","soft","badge","scan","ticket","ribbon","outline","corner","stamp"]);
+function normalizeImportedProject(value:unknown):Project|null{
+  if(!isRecord(value)||typeof value.id!=="string"||!value.id||value.id.length>120||typeof value.name!=="string"||!value.name.trim()||value.name.length>100||typeof value.type!=="string"||!allowedTypes.has(value.type as TypeId)||!isRecord(value.form)||!isRecord(value.design))return null;
+  const formKeys=Object.keys(initialForm) as (keyof FormState)[];
+  const form={...initialForm} as FormState;
+  for(const k of formKeys){const v=value.form[k as string];if(v!==undefined&&typeof v!=="string")return null;if(typeof v==="string")form[k]=v.slice(0,100000);}
+  form.password="";form.twofaSecret="";
+  const d=value.design;
+  if(d.fg!==undefined&&typeof d.fg!=="string"||d.bg!==undefined&&typeof d.bg!=="string"||d.accent!==undefined&&typeof d.accent!=="string")return null;
+  const design={...initialDesign,...d} as DesignState;
+  if(!/^#[0-9a-f]{6}$/i.test(design.fg)||!/^#[0-9a-f]{6}$/i.test(design.bg)||!/^#[0-9a-f]{6}$/i.test(design.accent)||!/^#[0-9a-f]{6}$/i.test(design.gradientEnd||design.accent))return null;
+  if(!allowedPatterns.has(design.bodyShape)||!allowedFinders.has(design.finder)||!allowedEC.has(design.ec)||!allowedFrames.has(design.frameStyle))return null;
+  design.size=Math.max(256,Math.min(4096,Number.isFinite(Number(design.size))?Number(design.size):initialDesign.size));
+  design.margin=Math.max(MIN_MARGIN,Math.min(32,Number.isFinite(Number(design.margin))?Number(design.margin):initialDesign.margin));
+  design.logoSize=Math.max(5,Math.min(25,Number.isFinite(Number(design.logoSize))?Number(design.logoSize):initialDesign.logoSize));
+  if(design.logo!==null&&typeof design.logo!=="string")return null;
+  if(typeof design.logo==="string"&&design.logo.length>2_000_000)return null;
+  if(typeof design.title!=="string"||typeof design.subtitle!=="string"||typeof design.cta!=="string")return null;
+  design.title=design.title.slice(0,32);design.subtitle=design.subtitle.slice(0,48);design.cta=design.cta.slice(0,20);
+  const thumb=typeof value.thumbnail==="string"&&value.thumbnail.startsWith("data:image/")&&value.thumbnail.length<=1_500_000?value.thumbnail:"";
+  if(!thumb)return null;
+  const tags=Array.isArray(value.tags)?value.tags.filter((x):x is string=>typeof x==="string").map(x=>x.slice(0,40)).slice(0,8):[];
+  const updated=Number(value.updated);
+  return {id:value.id,name:value.name.trim(),type:value.type as TypeId,form,design,updated:Number.isFinite(updated)?updated:Date.now(),thumbnail:thumb,favorite:value.favorite===true,tags};
+}
+
 const templateData=[
  ["clean","Clean","Universal","Simple for anything","#17213b","#ffffff","#6d5dfc","square","square",false,"Scan me","Open the link","SCAN ME"],
  ["minimal","Minimal","Universal","Quiet and elegant","#111827","#ffffff","#111827","rounded","square",false,"Hello","Scan to open","OPEN"],
@@ -374,34 +405,152 @@ function CreatePage({state}:{state:AppState}){
 }
 
 function TemplatesPage({state}:{state:AppState}){
- const {newProject,templateSearch,setTemplateSearch,templateCategory,setTemplateCategory,filteredTemplates,applyTemplate,setView,type,setType,form,design,payload,updateForm,updateDesign,busy,exportPng,resetDesign,undoAction,redoAction,undo,redo}=state;
- const [selected,setSelected]=useState<string>('');
- const [editorTab,setEditorTab]=useState<"content"|"appearance"|"shape"|"branding"|"advanced">("content");
- const selectedTemplate=templates.find(t=>t.id===selected);
- const categories=['All',...Array.from(new Set(templates.map(t=>t.category)))];
- const grouped=templateCategory==='All' ? categories.slice(1).map(category=>({category,items:templates.filter(t=>t.category===category&&`${t.name} ${t.note}`.toLowerCase().includes(templateSearch.toLowerCase()))})).filter(g=>g.items.length) : [{category:templateCategory,items:filteredTemplates}];
- const choose=(t:Template)=>{setSelected(t.id);setEditorTab("content");applyTemplate(t,false);window.scrollTo({top:0,behavior:"smooth"})};
- const resetTemplate=()=>{if(selectedTemplate)applyTemplate(selectedTemplate,false)};
- const customized=!!selectedTemplate && (design.fg!==selectedTemplate.fg||design.bg!==selectedTemplate.bg||design.accent!==selectedTemplate.accent||design.bodyShape!==selectedTemplate.pattern||design.finder!==selectedTemplate.finder||design.title!==selectedTemplate.title||design.subtitle!==selectedTemplate.subtitle||design.cta!==selectedTemplate.cta||design.frameStyle!==(selectedTemplate.frame||"badge")||!!(design.logoEnabled&&design.logo)||design.inkGradient||design.gradient!==selectedTemplate.gradient);
- const tabs:[typeof editorTab,string,string][]=[['content','Content','QR information'],['appearance','Appearance','Text & colors'],['shape','Shape','QR geometry'],['branding','Branding','Logo & identity'],['advanced','Advanced','Safety & export']];
- if(selectedTemplate)return <div className="page-shell"><Header view="templates" onNavigate={setView} onHome={()=>setView('landing')}/><main className="template-editor-workspace">
-   <div className="template-workspace-top"><button type="button" className="soft" onClick={()=>setSelected('')}><ArrowLeft size={15}/> Back to templates</button><div className="template-workspace-title"><span className="page-eyebrow">TEMPLATE EDITOR</span><div><h1>{selectedTemplate.name}</h1><span className={`template-state-pill ${customized?'customized':''}`}>{customized?'Customized':'Template'}</span></div></div><div className="template-workspace-actions"><button type="button" className="soft" onClick={resetTemplate}><Undo2 size={15}/> Reset</button><button type="button" className="soft" onClick={undoAction} disabled={!undo.length}><Undo2 size={15}/></button><button type="button" className="soft" onClick={redoAction} disabled={!redo.length}><Redo2 size={15}/></button><button type="button" className="primary" onClick={exportPng} disabled={busy}><Download size={15}/> Export</button></div></div>
-   <div className="template-workspace-grid">
-    <section className="template-workspace-preview"><div className="workspace-preview-head"><div><span className="page-eyebrow">LIVE PREVIEW</span><b>See every change instantly</b></div><span className="live-dot"><i/> Live</span></div><div className="workspace-preview-stage"><PreviewCard payload={payload} design={design}/></div><div className="workspace-preview-foot"><span><Check size={13}/> Auto-saved locally</span><small>{customized?'Your customized version is ready.':'Starting from the selected template.'}</small></div></section>
-    <section className="template-workspace-controls"><div className="workspace-tabs" role="tablist" aria-label="Template editing sections">{tabs.map(([id,label,note])=><button type="button" key={id} className={editorTab===id?'active':''} role="tab" aria-selected={editorTab===id} aria-controls={`workspace-panel-${id}`} onClick={()=>setEditorTab(id)}><span>{label}</span><small>{note}</small></button>)}</div><div className="workspace-control-scroll">
-      {editorTab==='content'&&<div id="workspace-panel-content" className="workspace-panel" role="tabpanel"><EditorPanelHeader icon={Clipboard} title="QR content" text="Change what this template encodes. Your visual design stays intact."/><label className="station-type"><span>QR type</span><select value={type} onChange={e=>setType(e.target.value as TypeId)}>{['Popular','Social','Contact','Business','Payments','Advanced'].map(g=><optgroup key={g} label={g}>{types.filter(t=>t.group===g).map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</optgroup>)}</select></label><ContentForm type={type} form={form} update={updateForm}/></div>}
-      {editorTab==='appearance'&&<div id="workspace-panel-appearance" className="workspace-panel" role="tabpanel"><EditorPanelHeader icon={Palette} title="Colors & typography" text="Tune the visual personality of the template."/><DesignControls design={design} update={updateDesign} updateMany={state.updateDesignMany} onLogo={state.onLogoFile} onReset={resetTemplate} payload={payload} templateMode templateSection="appearance"/></div>}
-      {editorTab==='shape'&&<div id="workspace-panel-shape" className="workspace-panel" role="tabpanel"><EditorPanelHeader icon={Layers} title="QR shape & frame" text="Control geometry, spacing, finder patterns and scan settings."/><DesignControls design={design} update={updateDesign} updateMany={state.updateDesignMany} onLogo={state.onLogoFile} onReset={resetTemplate} payload={payload} templateMode templateSection="shape"/></div>}
-      {editorTab==='branding'&&<div id="workspace-panel-branding" className="workspace-panel" role="tabpanel"><EditorPanelHeader icon={ImagePlus} title="Branding" text="Add a logo, switch it on or off, and control its safe size."/><DesignControls design={design} update={updateDesign} updateMany={state.updateDesignMany} onLogo={state.onLogoFile} onReset={resetTemplate} payload={payload} templateMode templateSection="branding"/></div>}
-      {editorTab==='advanced'&&<div id="workspace-panel-advanced" className="workspace-panel" role="tabpanel"><EditorPanelHeader icon={SlidersHorizontal} title="Advanced & QR Health" text="Review scan safety and use print-oriented presets before export."/><DesignControls design={design} update={updateDesign} updateMany={state.updateDesignMany} onLogo={state.onLogoFile} onReset={resetTemplate} payload={payload} templateMode templateSection="advanced"/></div>}
-    </div></section>
-   </div>
- </main></div>;
- return <div className="page-shell"><Header view="templates" onNavigate={setView} onHome={()=>setView('landing')}/><main className="templates-page-new">
-   <div className="templates-hero"><div><span className="page-eyebrow">TEMPLATE LIBRARY</span><h1>Start with a look that already feels right.</h1><p>Browse the complete library, then open any template in the dedicated Qraft editor.</p></div><button className="primary" onClick={newProject}><QrCode size={15}/> Start blank</button></div>
-   <div className="template-toolbar-new"><label className="search-field-large"><Search size={17}/><input value={templateSearch} onChange={e=>setTemplateSearch(e.target.value)} placeholder="Search every template…"/></label><div className="category-pills-new">{categories.map(c=><button key={c} className={templateCategory===c?'active':''} onClick={()=>setTemplateCategory(c)}>{c}<span>{c==='All'?templates.length:templates.filter(t=>t.category===c).length}</span></button>)}</div></div>
-   <section className="template-gallery template-gallery-full">{grouped.map(group=><section className="template-category-section" key={group.category}><div className="template-category-head"><div><span>{group.category}</span><h2>{group.category} templates</h2></div><small>{group.items.length} styles</small></div><div className="template-card-grid">{group.items.map(t=><button type="button" key={t.id} className="template-card-new" onClick={()=>choose(t)}><div className="template-card-art" style={{background:t.bg}}><MiniQR fg={t.fg} bg={t.bg} ec="H" pattern={t.pattern} finder={t.finder}/><span style={{background:t.fg,color:t.bg}}>{t.cta}</span><em>{t.pattern}</em></div><div className="template-card-copy"><div><b>{t.name}</b><span>{t.category}</span></div><p>{t.note}</p><small className="template-card-edit-hint">Customize template <ArrowRight size={12}/></small></div></button>)}</div></section>)}</section>
- </main></div>;
+  const {newProject,templateSearch,setTemplateSearch,templateCategory,setTemplateCategory,filteredTemplates,applyTemplate,setView,type,setType,form,design,payload,busy,exportPng,resetDesign,undoAction,redoAction,undo,redo}=state;
+  const [selected,setSelected]=useState<string>('');
+  const [editorTab,setEditorTab]=useState<"content"|"appearance"|"shape"|"branding"|"advanced">("content");
+  const [completed,setCompleted]=useState(false);
+  const selectedTemplate=templates.find(t=>t.id===selected);
+  const categories=['All',...Array.from(new Set(templates.map(t=>t.category)))];
+  const grouped=templateCategory==='All' ? categories.slice(1).map(category=>({category,items:templates.filter(t=>t.category===category&&`${t.name} ${t.note}`.toLowerCase().includes(templateSearch.toLowerCase()))})).filter(g=>g.items.length) : [{category:templateCategory,items:filteredTemplates}];
+
+  useEffect(()=>{
+    if(!selected)return;
+    const html=document.documentElement;
+    const body=document.body;
+    html.classList.add("template-editor-active");
+    body.classList.add("template-editor-active");
+    return()=>{
+      html.classList.remove("template-editor-active");
+      body.classList.remove("template-editor-active");
+    };
+  },[selected]);
+
+  const choose=(t:Template)=>{
+    setSelected(t.id);
+    setEditorTab("content");
+    setCompleted(false);
+    applyTemplate(t,false);
+  };
+  const resetTemplate=()=>{
+    if(selectedTemplate){
+      applyTemplate(selectedTemplate,false);
+      setCompleted(false);
+      setEditorTab("content");
+    }
+  };
+  const editForm=(k:keyof FormState,v:string)=>{setCompleted(false);state.updateForm(k,v)};
+  const editDesign=<K extends keyof DesignState>(k:K,v:DesignState[K])=>{setCompleted(false);state.updateDesign(k,v)};
+  const editDesignMany=(p:Partial<DesignState>)=>{setCompleted(false);state.updateDesignMany(p)};
+  const editLogo=(e:ChangeEvent<HTMLInputElement>)=>{setCompleted(false);void state.onLogoFile(e)};
+  const customized=!!selectedTemplate && (
+    design.fg!==selectedTemplate.fg||
+    design.bg!==selectedTemplate.bg||
+    design.accent!==selectedTemplate.accent||
+    design.bodyShape!==selectedTemplate.pattern||
+    design.finder!==selectedTemplate.finder||
+    design.title!==selectedTemplate.title||
+    design.subtitle!==selectedTemplate.subtitle||
+    design.cta!==selectedTemplate.cta||
+    design.frameStyle!==(selectedTemplate.frame||"badge")||
+    !!(design.logoEnabled&&design.logo)||
+    design.inkGradient||
+    design.gradient!==selectedTemplate.gradient
+  );
+  const tabs:[typeof editorTab,string,string][]=[
+    ['content','Content','QR information'],
+    ['appearance','Appearance','Text & colors'],
+    ['shape','Shape','QR geometry'],
+    ['branding','Branding','Logo & identity'],
+    ['advanced','Advanced','Safety & export']
+  ];
+
+  if(selectedTemplate)return <div className="page-shell template-editor-shell">
+    <Header view="templates" onNavigate={setView} onHome={()=>setView('landing')}/>
+    <main className="template-editor-workspace">
+      <header className="template-editor-header">
+        <button type="button" className="soft" onClick={()=>setSelected('')}><ArrowLeft size={15}/> Back to Templates</button>
+        <div className="template-workspace-title">
+          <span className="page-eyebrow">TEMPLATE EDITOR</span>
+          <div>
+            <h1>{selectedTemplate.name}</h1>
+            <span className={`template-state-pill ${completed||customized?'customized':''}`}>{completed?"Ready to export":customized?"Customized":"Editing"}</span>
+          </div>
+        </div>
+        <div className="template-workspace-actions">
+          <button type="button" className="soft" onClick={resetTemplate}><RotateCcw size={15}/> Reset</button>
+          <button type="button" className="soft" onClick={()=>{setCompleted(false);undoAction()}} disabled={!undo.length} title="Undo" aria-label="Undo"><Undo2 size={15}/></button>
+          <button type="button" className="soft" onClick={()=>{setCompleted(false);redoAction()}} disabled={!redo.length} title="Redo" aria-label="Redo"><Redo2 size={15}/></button>
+          {completed&&<button type="button" className="primary" onClick={()=>void exportPng()} disabled={busy}><Download size={15}/> Export</button>}
+        </div>
+      </header>
+
+      <div className="template-workspace-grid">
+        <section className="template-workspace-preview">
+          <div className="workspace-preview-head">
+            <div><span className="page-eyebrow">LIVE PREVIEW</span><b>See every change instantly</b></div>
+            <span className="live-dot"><i/> Live</span>
+          </div>
+          <div className="workspace-preview-stage"><PreviewCard payload={payload} design={design}/></div>
+          <div className="workspace-preview-foot">
+            <span><Check size={13}/> Auto-saved locally</span>
+            <small>{completed?"Customized version is ready to export.":customized?"Your changes are saved automatically.":"Starting from the selected template."}</small>
+          </div>
+        </section>
+
+        <section className="template-workspace-controls">
+          <div className="workspace-controls-inner">
+            <nav className="workspace-tabs" role="tablist" aria-label="Template editing sections">
+              <span className="workspace-tabs-label">EDIT</span>
+              {tabs.map(([id,label,note])=><button type="button" key={id} className={editorTab===id?'active':''} role="tab" aria-selected={editorTab===id} aria-controls={`workspace-panel-${id}`} onClick={()=>{setEditorTab(id);setCompleted(false)}}>
+                <span>{label}</span><small>{note}</small>
+              </button>)}
+            </nav>
+            <div className="workspace-control-scroll">
+              {editorTab==='content'&&<div id="workspace-panel-content" className="workspace-panel" role="tabpanel">
+                <EditorPanelHeader icon={Clipboard} title="Content" text="Choose what this template encodes. Your visual design stays intact."/>
+                <label className="station-type"><span>QR type</span><select value={type} onChange={e=>{setType(e.target.value as TypeId);setCompleted(false)}}>{['Popular','Social','Contact','Business','Payments','Advanced'].map(g=><optgroup key={g} label={g}>{types.filter(t=>t.group===g).map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</optgroup>)}</select></label>
+                <ContentForm type={type} form={form} update={editForm}/>
+              </div>}
+              {editorTab==='appearance'&&<div id="workspace-panel-appearance" className="workspace-panel" role="tabpanel">
+                <EditorPanelHeader icon={Palette} title="Appearance" text="Tune headline, supporting text, colors, glow, transparency and gradient."/>
+                <DesignControls design={design} update={editDesign} updateMany={editDesignMany} onLogo={editLogo} onReset={resetTemplate} payload={payload} templateMode templateSection="appearance"/>
+              </div>}
+              {editorTab==='shape'&&<div id="workspace-panel-shape" className="workspace-panel" role="tabpanel">
+                <EditorPanelHeader icon={Layers} title="Shape" text="Control QR geometry, finder patterns, frames, error correction and spacing."/>
+                <DesignControls design={design} update={editDesign} updateMany={editDesignMany} onLogo={editLogo} onReset={resetTemplate} payload={payload} templateMode templateSection="shape"/>
+              </div>}
+              {editorTab==='branding'&&<div id="workspace-panel-branding" className="workspace-panel" role="tabpanel">
+                <EditorPanelHeader icon={ImagePlus} title="Branding" text="Add a logo, switch it on or off, and control its safe size."/>
+                <DesignControls design={design} update={editDesign} updateMany={editDesignMany} onLogo={editLogo} onReset={resetTemplate} payload={payload} templateMode templateSection="branding"/>
+              </div>}
+              {editorTab==='advanced'&&<div id="workspace-panel-advanced" className="workspace-panel" role="tabpanel">
+                <EditorPanelHeader icon={SlidersHorizontal} title="Advanced" text="Review QR Health, scan safety and print-oriented presets."/>
+                <DesignControls design={design} update={editDesign} updateMany={editDesignMany} onLogo={editLogo} onReset={resetTemplate} payload={payload} templateMode templateSection="advanced"/>
+              </div>}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer className="template-editor-footer">
+        <div className="template-editor-status">
+          <span className={`editor-status-dot ${completed?'ready':''}`}/>
+          <div><b>{completed?"Ready to export":"Editing"}</b><small>{completed?"Customization is complete. You can export or edit again.":"Changes are saved automatically."}</small></div>
+        </div>
+        <div className="template-editor-footer-actions">
+          {completed
+            ? <><button type="button" className="soft" onClick={()=>setCompleted(false)}><Paintbrush size={15}/> Edit again</button><button type="button" className="primary" onClick={()=>void exportPng()} disabled={busy}><Download size={15}/> {busy?"Preparing…":"Export"}</button></>
+            : <button type="button" className="primary" onClick={()=>setCompleted(true)}><Check size={15}/> Done</button>}
+        </div>
+      </footer>
+    </main>
+  </div>;
+
+  return <div className="page-shell"><Header view="templates" onNavigate={setView} onHome={()=>setView('landing')}/><main className="templates-page-new">
+    <div className="templates-hero"><div><span className="page-eyebrow">TEMPLATE LIBRARY</span><h1>Start with a look that already feels right.</h1><p>Browse the complete library, then open any template in the dedicated Qraft editor.</p></div><button className="primary" onClick={newProject}><QrCode size={15}/> Start blank</button></div>
+    <div className="template-toolbar-new"><label className="search-field-large"><Search size={17}/><input value={templateSearch} onChange={e=>setTemplateSearch(e.target.value)} placeholder="Search every template…"/></label><div className="category-pills-new">{categories.map(c=><button key={c} className={templateCategory===c?'active':''} onClick={()=>setTemplateCategory(c)}>{c}<span>{c==='All'?templates.length:templates.filter(t=>t.category===c).length}</span></button>)}</div></div>
+    <section className="template-gallery template-gallery-full">{grouped.map(group=><section className="template-category-section" key={group.category}><div className="template-category-head"><div><span>{group.category}</span><h2>{group.category} templates</h2></div><small>{group.items.length} styles</small></div><div className="template-card-grid">{group.items.map(t=><button type="button" key={t.id} className="template-card-new" onClick={()=>choose(t)}><div className="template-card-art" style={{background:t.bg}}><MiniQR fg={t.fg} bg={t.bg} ec="H" pattern={t.pattern} finder={t.finder}/><span style={{background:t.fg,color:t.bg}}>{t.cta}</span><em>{t.pattern}</em></div><div className="template-card-copy"><div><b>{t.name}</b><span>{t.category}</span></div><p>{t.note}</p><small className="template-card-edit-hint">Customize template <ArrowRight size={12}/></small></div></button>)}</div></section>)}</section>
+  </main></div>;
 }
 function EditorPanelHeader({icon:Icon,title,text}:{icon:LucideIcon;title:string;text:string}){return <div className="editor-panel-header"><span className="editor-section-icon"><Icon size={17}/></span><div><span className="page-eyebrow">EDIT SECTION</span><b>{title}</b><small>{text}</small></div></div>}
 
@@ -480,7 +629,7 @@ function App(){
  const [batchProgress,setBatchProgress]=useState(""); const dirtyRef=useRef(false); const editRevisionRef=useRef(0); const lastSnap=useRef({key:"",t:0}); const toastTimer=useRef<number|null>(null); const detectorRef=useRef<{detect:(source:HTMLCanvasElement)=>Promise<{rawValue?:string}[]>}|null|undefined>(undefined); const detectorTick=useRef(0);
  const [templateSearch,setTemplateSearch]=useState(""); const [templateCategory,setTemplateCategory]=useState("All"); const [batch,setBatch]=useState(""); const [batchResults,setBatchResults]=useState<{name:string;url:string}[]>([]);
  const [commandOpen,setCommandOpen]=useState(false);
- const [scanResult,setScanResult]=useState(""); const [scanError,setScanError]=useState(""); const [scanTest,setScanTest]=useState<{state:"idle"|"running"|"passed"|"failed";message:string}>({state:"idle",message:"Run the scan test to verify this QR before publishing it."}); const cameraRef=useRef<HTMLVideoElement>(null); const scanCanvas=useRef<HTMLCanvasElement>(null); const streamRef=useRef<MediaStream|null>(null); const scanFrameRef=useRef<number|null>(null);
+ const [scanResult,setScanResult]=useState(""); const [scanError,setScanError]=useState(""); const [scanTest,setScanTest]=useState<{state:"idle"|"running"|"passed"|"failed";message:string}>({state:"idle",message:"Run the scan test to verify this QR before publishing it."}); const cameraRef=useRef<HTMLVideoElement>(null); const scanCanvas=useRef<HTMLCanvasElement>(null); const streamRef=useRef<MediaStream|null>(null); const scanFrameRef=useRef<number|null>(null); const scanLastAt=useRef(0);
  const payload=useMemo(()=>payloadFor(type,form),[type,form]); const filteredTemplates=useMemo(()=>templates.filter(t=>(templateCategory==="All"||t.category===templateCategory)&&`${t.name} ${t.note} ${t.category}`.toLowerCase().includes(templateSearch.toLowerCase())),[templateCategory,templateSearch]);
  useEffect(()=>{let live=true;loadProjects<Project>().then(saved=>{if(!live)return;setProjects(cur=>[...cur,...saved.filter(q=>!cur.some(c=>c.id===q.id))]);projectsLoaded.current=true});return()=>{live=false}},[]);
  useEffect(()=>{if(!projectsLoaded.current)return;const id=window.setTimeout(()=>{saveProjects(projects.slice(0,100)).catch(()=>notify("Browser storage is full or blocked — this project could not be saved."))},280);return()=>window.clearTimeout(id)},[projects]); useEffect(()=>()=>{if(scanFrameRef.current!==null)cancelAnimationFrame(scanFrameRef.current);streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null},[]); useEffect(()=>{window.scrollTo({top:0,behavior:"auto"})},[view]);
@@ -542,21 +691,17 @@ useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape"&&successRef.c
  const importProjects=async(file:File)=>{
    try{
      if(file.size>10*1024*1024)throw new Error("Project backup is larger than 10 MB.");
-     const raw=JSON.parse(await file.text()) as {app?:string;version?:number;projects?:unknown};
-     if(raw?.app!=="Qraft"||!Array.isArray(raw.projects))throw new Error("This is not a valid Qraft project backup.");
-     const incoming=(raw.projects as Project[]).filter(p=>p&&typeof p.id==="string"&&typeof p.name==="string"&&typeof p.type==="string"&&p.form&&p.design).slice(0,100);
-     if(!incoming.length)throw new Error("No valid projects were found in this backup.");
-     const normalized=incoming.map(p=>{
-       const safeForm={...initialForm,...p.form,password:"",twofaSecret:""};
-       return {...p,design:{...initialDesign,...p.design,logoEnabled:typeof p.design.logoEnabled==="boolean"?p.design.logoEnabled:!!p.design.logo},form:safeForm,favorite:!!p.favorite,tags:Array.isArray(p.tags)?p.tags.filter(x=>typeof x==="string").slice(0,8):[]};
-     });
+     const raw=JSON.parse(await file.text()) as {app?:unknown;version?:unknown;projects?:unknown};
+     if(raw?.app!=="Qraft"||raw.version!==1||!Array.isArray(raw.projects))throw new Error("Unsupported or invalid Qraft backup. Export a fresh Qraft v1 backup and try again.");
+     const normalized=(raw.projects as unknown[]).map(normalizeImportedProject).filter((p):p is Project=>p!==null).slice(0,100);
+     if(!normalized.length)throw new Error("No valid projects were found in this backup.");
      const merged=Array.from(new Map([...projects.map(p=>[p.id,p]),...normalized.map(p=>[p.id,p])]).values()).sort((a,b)=>b.updated-a.updated).slice(0,100);
-     setProjects(merged);
      await saveProjects(merged);
+     setProjects(merged);
      notify(`${normalized.length} project${normalized.length===1?"":"s"} imported`);
    }catch(e){notify(e instanceof Error?e.message:"Could not import that backup")}
  };
- const clearProjects=()=>{setProjects([]);setSavedId("");void clearStoredProjects()};
+ const clearProjects=async()=>{try{await clearStoredProjects();setProjects([]);setSavedId("");notify("All local projects cleared")}catch(e){notify(e instanceof Error?e.message:"Could not clear projects")}};
  const verifyCurrentQR=async():Promise<string|null>=>{
    const problem=validatePayload(type,form);
    if(problem)throw new Error(problem);
@@ -700,7 +845,7 @@ const exportSvg=async()=>{
    const Detector=(window as unknown as {BarcodeDetector?:{new(o:{formats:string[]}):{detect:(s:HTMLCanvasElement)=>Promise<{rawValue?:string}[]>};getSupportedFormats?:()=>Promise<string[]>}}).BarcodeDetector;
    if(!Detector){detectorRef.current=null;return null}
    try{
-     const desired=["qr_code","code_128","code_39","code_93","codabar","ean_13","ean_8","itf","upc_a","upc_e","data_matrix","pdf417","aztec"];
+     const desired=["qr_code"];
      const supported=typeof Detector.getSupportedFormats==="function"?await Detector.getSupportedFormats():desired;
      const formats=desired.filter(x=>supported.includes(x));
      detectorRef.current=new Detector({formats:formats.length?formats:["qr_code"]});
@@ -734,7 +879,7 @@ const exportSvg=async()=>{
    return null;
  };
  const startCamera=async()=>{try{setScanError("");setScanResult("");stopScanner();if(!navigator.mediaDevices?.getUserMedia)throw new Error();const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}}});streamRef.current=s;if(cameraRef.current){cameraRef.current.srcObject=s;await cameraRef.current.play();scanLoop()}}catch{setScanError("Camera permission or camera access is unavailable. Try image upload instead.")}};
- const scanLoop=async()=>{const v=cameraRef.current,c=scanCanvas.current;if(!v||!c||!streamRef.current)return;if(v.videoWidth){const sc=Math.min(1,720/Math.max(v.videoWidth,v.videoHeight));const w=Math.round(v.videoWidth*sc),h=Math.round(v.videoHeight*sc);if(c.width!==w||c.height!==h){c.width=w;c.height=h}}else if(!c.width){c.width=720;c.height=540}const ctx=c.getContext("2d",{willReadFrequently:true});if(!ctx)return;ctx.drawImage(v,0,0,c.width,c.height);
+ const scanLoop=async()=>{const v=cameraRef.current,c=scanCanvas.current;if(!v||!c||!streamRef.current)return;const now=performance.now();if(now-scanLastAt.current<120){scanFrameRef.current=requestAnimationFrame(scanLoop);return}scanLastAt.current=now;if(v.videoWidth){const sc=Math.min(1,720/Math.max(v.videoWidth,v.videoHeight));const w=Math.round(v.videoWidth*sc),h=Math.round(v.videoHeight*sc);if(c.width!==w||c.height!==h){c.width=w;c.height=h}}else if(!c.width){c.width=720;c.height=540}const ctx=c.getContext("2d",{willReadFrequently:true});if(!ctx)return;ctx.drawImage(v,0,0,c.width,c.height);
    const d=ctx.getImageData(0,0,c.width,c.height);const qr=jsQR(d.data,d.width,d.height,{inversionAttempts:"attemptBoth"});if(qr?.data){handleDecodedValue(qr.data);return;}
    detectorTick.current=(detectorTick.current+1)%6;if(detectorTick.current===0){const detector=await getDetector();if(detector){try{const found=await detector.detect(c);const value=found?.find(x=>x.rawValue)?.rawValue;if(value){handleDecodedValue(value);return}}catch{}}}
    if(streamRef.current)scanFrameRef.current=requestAnimationFrame(scanLoop);
@@ -749,7 +894,6 @@ const exportSvg=async()=>{
    setBatchProgress(`0/${rows.length}`);
    for(let i=0;i<rows.length;i++){
      const row=rows[i];const idx=row.indexOf(",");const head=idx>0?row.slice(0,idx).trim():"";
-     // "Name,URL" only when the part before the first comma is not itself a URL (URLs may contain commas)
      const hasName=idx>0&&!/^[a-z][a-z0-9+.-]*:/i.test(head)&&!head.includes("/");
      let value=(hasName?row.slice(idx+1):row).trim();
      if(!value){skipped++;continue}
@@ -758,9 +902,10 @@ const exportSvg=async()=>{
        const c=await renderQR(value,{...design,logo:null,ec:"H",transparent:false},700);
        const base=safeName(hasName?head:value.replace(/^https?:\/\//i,""))||`QR-${i+1}`;
        let name=base,k=2;while(used.has(name.toLowerCase()))name=`${base}-${k++}`;used.add(name.toLowerCase());
+       // Keep batches bounded in memory: 700px PNGs are immediately represented as blobs/data URLs only for the current UI preview.
        out.push({name,url:c.toDataURL("image/png")});
      }catch{skipped++}
-     if(i%6===5){setBatchProgress(`${i+1}/${rows.length}`);await new Promise(r=>window.setTimeout(r,0))}
+     if(i%4===3){setBatchProgress(`${i+1}/${rows.length}`);await new Promise(r=>window.setTimeout(r,0))}
    }
    setBatchProgress("");setBatchResults(out);
    const notes=[all.length>1000?`${all.length-1000} rows over the 1,000 limit ignored`:"",skipped?`${skipped} row${skipped>1?"s":""} skipped`:""].filter(Boolean).join(" · ");

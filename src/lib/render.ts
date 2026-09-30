@@ -127,7 +127,10 @@ export async function renderQR(payload:string,d:DesignState,size=d.size):Promise
     try{
       const img=await loadImage(logo);
       const {logoSize,pad,x,y}=logoGeometry(size,d);
-      ctx.save();ctx.fillStyle=d.bg||"#ffffff";ctx.beginPath();ctx.roundRect(x-pad,y-pad,logoSize+pad*2,logoSize+pad*2,Math.min(24,pad));ctx.fill();ctx.drawImage(img,x,y,logoSize,logoSize);ctx.restore();
+      ctx.save();
+      if(d.transparent){ctx.clearRect(x-pad,y-pad,logoSize+pad*2,logoSize+pad*2)}
+      else {ctx.fillStyle=d.bg||"#ffffff";ctx.beginPath();ctx.roundRect(x-pad,y-pad,logoSize+pad*2,logoSize+pad*2,Math.min(24,pad));ctx.fill()}
+      ctx.drawImage(img,x,y,logoSize,logoSize);ctx.restore();
     }catch{/* a logo that fails to load must not block the QR itself */}
   }
   return canvas;
@@ -139,9 +142,11 @@ export async function qrSvg(payload:string,d:DesignState):Promise<string>{
   const safeBodyShape:BodyShape = modules >= 45 && bodyShape !== "square" ? "square" : bodyShape;
   const size=1000,cell=size/(modules+margin*2),off=margin*cell;
   const f=(n:number)=>+n.toFixed(3);
+  const esc=(v:string)=>String(v).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const ink=d.inkGradient?"url(#qraftInkGradient)":esc(d.fg);
   let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
-  if(d.inkGradient) out+=`<defs><linearGradient id="qraftInkGradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${d.fg}"/><stop offset="100%" stop-color="${d.gradientEnd || d.accent || d.fg}"/></linearGradient></defs>`;
-  if(!d.transparent)out+=`<rect width="${size}" height="${size}" fill="${d.bg}"/>`;
+  if(d.inkGradient) out+=`<defs><linearGradient id="qraftInkGradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${esc(d.fg)}"/><stop offset="100%" stop-color="${esc(d.gradientEnd || d.accent || d.fg)}"/></linearGradient></defs>`;
+  if(!d.transparent)out+=`<rect width="${size}" height="${size}" fill="${esc(d.bg)}"/>`;
   let squares="",shapes="";
   for(let r=0;r<modules;r++)for(let c=0;c<modules;c++){
     if(data[r*modules+c]!==1||inFinder(r,c,modules))continue;
@@ -156,13 +161,20 @@ export async function qrSvg(payload:string,d:DesignState):Promise<string>{
     else if(shape==="leaf")shapes+=`<path d="M${f(x+cell*.5)} ${f(y+cell*.04)} C${f(x+cell*.98)} ${f(y+cell*.16)} ${f(x+cell*.9)} ${f(y+cell*.82)} ${f(x+cell*.5)} ${f(y+cell*.96)} C${f(x+cell*.1)} ${f(y+cell*.82)} ${f(x+cell*.02)} ${f(y+cell*.16)} ${f(x+cell*.5)} ${f(y+cell*.04)}z"/>`;
     else shapes+=`<rect x="${f(x+cell*.05)}" y="${f(y+cell*.05)}" width="${f(cell*.9)}" height="${f(cell*.9)}" rx="${f(cell*.22)}"/>`;
   }
-  out+=`<g fill="${d.fg}">${squares?`<path d="${squares}"/>`:""}${shapes}`;
+  out+=`<g fill="${ink}">${squares?`<path d="${squares}"/>`:""}${shapes}`;
   const rr=finder==="rounded"?cell*.65:0;
   for(const [fr,fc] of [[0,0],[0,modules-7],[modules-7,0]]){
     const x=off+fc*cell,y=off+fr*cell;
-    if(finder==="circle"){const cx=x+cell*3.5,cy=y+cell*3.5;out+=`<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(cell*3.5)}" fill="${d.fg}"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(cell*2.5)}" fill="${d.bg||"#ffffff"}"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(cell*1.5)}" fill="${d.fg}"/>`;}
-    else if(finder==="diamond"){const pts=(r:number)=>`${f(x+cell*3.5)},${f(y+cell*3.5-r)} ${f(x+cell*3.5+r)},${f(y+cell*3.5)} ${f(x+cell*3.5)},${f(y+cell*3.5+r)} ${f(x+cell*3.5-r)},${f(y+cell*3.5)}`;out+=`<polygon points="${pts(cell*3.5)}" fill="${d.fg}"/><polygon points="${pts(cell*2.5)}" fill="${d.bg||"#ffffff"}"/><polygon points="${pts(cell*1.5)}" fill="${d.fg}"/>`; }
-    else out+=`<path fill-rule="evenodd" d="${rrPath(x,y,cell*7,cell*7,rr)}${rrPath(x+cell,y+cell,cell*5,cell*5,rr*.68)}"/><path d="${rrPath(x+cell*2,y+cell*2,cell*3,cell*3,rr*.35)}"/>`;
+    if(finder==="circle"){
+      const cx=x+cell*3.5,cy=y+cell*3.5;
+      out+=`<path fill-rule="evenodd" d="${rrPath(cx-cell*3.5,cy-cell*3.5,cell*7,cell*7,cell*3.5)} ${rrPath(cx-cell*2.5,cy-cell*2.5,cell*5,cell*5,cell*2.5)}"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(cell*1.5)}"/>`;
+    }else if(finder==="diamond"){
+      const cx=x+cell*3.5,cy=y+cell*3.5;
+      const pts=(r:number)=>`${f(cx)},${f(cy-r)} ${f(cx+r)},${f(cy)} ${f(cx)},${f(cy+r)} ${f(cx-r)},${f(cy)}`;
+      out+=`<path fill-rule="evenodd" d="M${pts(cell*3.5)}z M${pts(cell*2.5)}z"/><polygon points="${pts(cell*1.5)}"/>`;
+    }else{
+      out+=`<path fill-rule="evenodd" d="${rrPath(x,y,cell*7,cell*7,rr)} ${rrPath(x+cell,y+cell,cell*5,cell*5,rr*.68)}"/><path d="${rrPath(x+cell*2,y+cell*2,cell*3,cell*3,rr*.35)}"/>`;
+    }
   }
   out+="</g>";
   if(logo){
@@ -170,7 +182,8 @@ export async function qrSvg(payload:string,d:DesignState):Promise<string>{
       const img=await loadImage(logo);
       const c=document.createElement("canvas");c.width=256;c.height=256;c.getContext("2d")!.drawImage(img,0,0,256,256);
       const {logoSize,pad,x,y}=logoGeometry(size,d);
-      out+=`<rect x="${f(x-pad)}" y="${f(y-pad)}" width="${f(logoSize+pad*2)}" height="${f(logoSize+pad*2)}" rx="${f(Math.min(24,pad))}" fill="${d.bg||"#ffffff"}"/><image href="${c.toDataURL("image/png")}" x="${f(x)}" y="${f(y)}" width="${f(logoSize)}" height="${f(logoSize)}" preserveAspectRatio="xMidYMid meet"/>`;
+      if(!d.transparent)out+=`<rect x="${f(x-pad)}" y="${f(y-pad)}" width="${f(logoSize+pad*2)}" height="${f(logoSize+pad*2)}" rx="${f(Math.min(24,pad))}" fill="${esc(d.bg||"#ffffff")}"/>`;
+      out+=`<image href="${c.toDataURL("image/png")}" x="${f(x)}" y="${f(y)}" width="${f(logoSize)}" height="${f(logoSize)}" preserveAspectRatio="xMidYMid meet"/>`;
     }catch{/* ignore logo failures */}
   }
   return out+"</svg>";
@@ -199,13 +212,20 @@ export async function verifyQR(payload:string,d:DesignState):Promise<string|null
   const inverted=!d.transparent&&relLum(d.fg)>relLum(d.bg);
   if(d.transparent){
     if(contrastRatio(d.fg,"#ffffff")<3)throw new Error("Ink is too light for a transparent QR — it would vanish on most backgrounds. Choose a darker ink color.");
+    if(d.inkGradient&&(d.gradientEnd||d.accent)&&contrastRatio(d.gradientEnd||d.accent,"#ffffff")<3)throw new Error("The gradient end is too light for transparent output. Choose a darker gradient color.");
     warnings.push("Transparent background: place this QR on a plain, light surface.");
   }else{
-    const ratio=contrastRatio(d.fg,d.bg);
+    const ratios=[contrastRatio(d.fg,d.bg)];
+    if(d.inkGradient)ratios.push(contrastRatio(d.gradientEnd||d.accent||d.fg,d.bg));
+    const ratio=Math.min(...ratios);
     if(ratio<3)throw new Error(`Ink and background contrast is too low (${ratio.toFixed(1)}:1). Use at least 3:1 — 4.5:1 or more is safer.`);
     if(inverted)warnings.push("Light ink on a dark background is unreadable in some scanner apps; dark ink on light is safest.");
   }
-  const vd:DesignState={...d,transparent:false};
+  // jsQR cannot reliably interpret transparent pixels as a real-world surface.
+  // For transparent output, verify the same QR geometry against a neutral white
+  // surface instead of silently treating transparency as a dark/black background.
+  const verificationBg=d.transparent?"#ffffff":d.bg;
+  const vd:DesignState={...d,transparent:false,bg:verificationBg};
   const decode=async(px:number)=>{
     let c:HTMLCanvasElement;
     try{c=await renderQR(payload,vd,px)}catch(e){
@@ -216,7 +236,12 @@ export async function verifyQR(payload:string,d:DesignState):Promise<string|null
     const img=ctx.getImageData(0,0,c.width,c.height);
     return jsQR(img.data,img.width,img.height,{inversionAttempts:inverted?"attemptBoth":"dontInvert"})?.data===payload;
   };
-  if(!(await decode(d.size)))throw new Error("This QR design could not be verified. Qraft needs a 6+ module quiet zone, strong contrast, and a smaller or disabled logo for this design.");
+  if(!(await decode(d.size))){
+    const recovery=d.logoEnabled&&d.logo
+      ?"This QR design could not be verified. Try a larger quiet zone, stronger contrast, or a smaller logo."
+      :"This QR design could not be verified. Try a larger quiet zone or stronger contrast.";
+    throw new Error(recovery);
+  }
   if(!isEmbeddedImagePayload(payload)&&!(await decode(300)))warnings.push("This QR is dense and may be hard to scan when small — shorten the content or print it larger.");
   return warnings.length?warnings.join(" "):null;
 }

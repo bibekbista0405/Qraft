@@ -10,13 +10,17 @@ self.addEventListener("activate",event=>{
 self.addEventListener("fetch",event=>{
   const request=event.request;
   if(request.method!=="GET"||new URL(request.url).origin!==location.origin)return;
-  event.respondWith(
-    fetch(request).then(response=>{
-      if(response.ok){
-        const copy=response.clone();
-        caches.open(C).then(cache=>cache.put(request,copy)).catch(()=>{});
-      }
+  const url=new URL(request.url);
+  const staticAsset=/\.(?:js|css|png|jpg|jpeg|webp|svg|ico|woff2?)$/i.test(url.pathname);
+  if(staticAsset){
+    event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{
+      if(response.ok)caches.open(C).then(cache=>cache.put(request,response.clone())).catch(()=>{});
       return response;
-    }).catch(()=>caches.match(request).then(cached=>cached||caches.match(SHELL)))
-  );
+    })));
+    return;
+  }
+  event.respondWith(fetch(request).then(response=>{
+    if(response.ok&&request.destination==="document")caches.open(C).then(cache=>cache.put(request,response.clone())).catch(()=>{});
+    return response;
+  }).catch(()=>caches.match(request).then(cached=>cached||caches.match(SHELL))));
 });

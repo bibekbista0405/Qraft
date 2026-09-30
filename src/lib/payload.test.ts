@@ -16,6 +16,7 @@ describe("wifi",()=>{
 });
 describe("event",()=>{
   it("normalises dates",()=>{expect(icalDate("2026-09-28 18:00")).toBe("20260928T180000");expect(icalDate("2026-09-28")).toBe("20260928");expect(icalDate("20260928T180000")).toBe("20260928T180000")});
+  it("rejects impossible calendar dates",()=>{expect(icalDate("2026-02-31 18:00")).toBe("");expect(icalDate("2026-13-01")).toBe("")});
   it("wraps in VCALENDAR",()=>{const p=payloadFor("event",f({eventName:"Meetup",eventStart:"2026-09-28 18:00"}));expect(p.startsWith("BEGIN:VCALENDAR")).toBe(true);expect(p).toContain("DTSTART:20260928T180000")});
 });
 describe("social + misc",()=>{

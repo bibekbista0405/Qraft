@@ -1,3 +1,26 @@
+## Template Editor workspace — 2026-09-30
+
+- Rebuilt the template customization screen as a dedicated viewport-fitted editor workspace while preserving the existing template gallery.
+- Added a dedicated editor header with Back to Templates, Reset, Undo/Redo, and state-driven completion.
+- Editor defaults to Content and uses a compact vertical section navigator on desktop: Content, Appearance, Shape, Branding, Advanced.
+- Added a fixed bottom status/action area with Done during editing and Export/Edit again only after customization is completed.
+- Export actions are absent from the editing state rather than merely disabled.
+- Locked the document viewport while the editor is active and constrained scrolling to the preview/control regions instead of allowing the page to grow.
+- Added responsive desktop/mobile workspace layouts with `min-height: 0` and controlled internal scrolling.
+- Template edits, logo upload/removal, undo/redo, and content changes return the editor to Editing state.
+- Preserved the existing QR renderer, verification, templates, content types, design controls, logo safety, autosave, PWA, and project/library behavior.
+
+## Stability hardening — 2026-09-30
+
+- Fixed transparent SVG finder holes and transparent logo clear areas.
+- Fixed SVG ink-gradient output so vector exports match the canvas renderer.
+- Fixed IndexedDB/localStorage project migration and made project clearing report IndexedDB failures.
+- Added strict Qraft v1 backup/project validation and normalization.
+- Hardened event date validation and phone/SMS normalization.
+- Limited camera BarcodeDetector scanning to QR codes and throttled camera decoding work.
+- Made the service worker cache static assets selectively instead of caching every GET response.
+- Standardized the documented runtime on Node.js 24.x.
+
 # Qraft change log
 
 ## Current repair — 2026-09-30

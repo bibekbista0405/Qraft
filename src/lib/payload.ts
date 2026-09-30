@@ -29,11 +29,27 @@ export function normUrl(v:string){
 
 /** Turn "2026-09-28 18:00", "20260928T1800" etc. into iCalendar form. */
 export function icalDate(v:string){
-  const d=v.replace(/\D/g,"");
-  if(d.length===8)return d;
-  if(d.length===12)return `${d.slice(0,8)}T${d.slice(8)}00`;
-  if(d.length>=14)return `${d.slice(0,8)}T${d.slice(8,14)}`;
-  return d;
+  const raw=v.trim();
+  const m=raw.match(/^(\d{4})[-/](\d{2})[-/](\d{2})(?:[ T](\d{2}):?(\d{2})(?::?(\d{2}))?)?$/);
+  if(m){
+    const [,y,mo,day,hh,mm,ss]=m;
+    const dt=new Date(Date.UTC(Number(y),Number(mo)-1,Number(day),Number(hh||0),Number(mm||0),Number(ss||0)));
+    if(dt.getUTCFullYear()===Number(y)&&dt.getUTCMonth()===Number(mo)-1&&dt.getUTCDate()===Number(day)&&Number(hh||0)<=23&&Number(mm||0)<=59&&Number(ss||0)<=59){
+      if(!hh)return `${y}${mo}${day}`;
+      return `${y}${mo}${day}T${hh}${mm}${ss||"00"}`;
+    }
+  }
+  const compact=raw.match(/^(\d{8})(?:T?(\d{4})(\d{2})?)?$/);
+  if(compact){
+    const [,date,hm,ss]=compact;
+    const y=Number(date.slice(0,4)),mo=Number(date.slice(4,6)),day=Number(date.slice(6,8));
+    const hh=hm?Number(hm.slice(0,2)):0,mm=hm?Number(hm.slice(2,4)):0,sec=ss?Number(ss):0;
+    const dt=new Date(Date.UTC(y,mo-1,day,hh,mm,sec));
+    if(dt.getUTCFullYear()===y&&dt.getUTCMonth()===mo-1&&dt.getUTCDate()===day&&hh<=23&&mm<=59&&sec<=59){
+      return hm?`${date}T${hm}${ss||"00"}`:date;
+    }
+  }
+  return "";
 }
 
 export function normBase32(v:string){return v.replace(/[\s-]+/g,"").toUpperCase();}
@@ -61,8 +77,8 @@ export function payloadFor(t:TypeId,f:FormState):string{
       const q=[f.subject?`subject=${encodeURIComponent(f.subject)}`:"",f.body?`body=${encodeURIComponent(f.body)}`:""].filter(Boolean).join("&");
       return `mailto:${u(f.email)}${q?`?${q}`:""}`;
     }
-    case "phone":return `tel:${f.phone.replace(/\s+/g,"")}`;
-    case "sms":return `SMSTO:${f.phone.replace(/\s+/g,"")}:${f.smsBody}`;
+    case "phone":return `tel:${f.phone.replace(/[^0-9+]/g,"")}`;
+    case "sms":return `SMSTO:${f.phone.replace(/[^0-9+]/g,"")}:${f.smsBody}`;
     case "wifi":return f.security==="nopass"?`WIFI:T:nopass;S:${escWifi(f.ssid)};;`:`WIFI:T:${f.security};S:${escWifi(f.ssid)};P:${escWifi(f.password)};;`;
     case "vcard":return `BEGIN:VCARD\nVERSION:3.0\nN:${esc(f.lastName)};${esc(f.firstName)};;;\nFN:${esc(`${f.firstName} ${f.lastName}`.trim())}\nORG:${esc(f.organization)}\nTEL:${esc(f.contactPhone)}\nEMAIL:${esc(f.contactEmail)}\nEND:VCARD`;
     case "location":{
@@ -109,7 +125,7 @@ export function validatePayload(t:TypeId,f:FormState):string|null{
     case "location":return need(Number.isFinite(Number(f.lat))&&f.lat.trim()!==""&&Math.abs(Number(f.lat))<=90&&Number.isFinite(Number(f.lng))&&f.lng.trim()!==""&&Math.abs(Number(f.lng))<=180,"Latitude must be −90…90 and longitude −180…180.");
     case "whatsapp":return need(payloadFor(t,f)!=="","Add a phone number (with country code) or a WhatsApp link.");
     case "instagram":case "facebook":case "youtube":case "tiktok":case "telegram":return need(payloadFor(t,f)!=="","Add a profile URL or a username.");
-    case "event":return need(f.eventName.trim().length>0,"Give the event a name.")||need(icalDate(f.eventStart).length>=8,"Add a start date, like 2026-09-28 18:00.");
+    case "event":{const start=icalDate(f.eventStart),end=icalDate(f.eventEnd||f.eventStart);return need(f.eventName.trim().length>0,"Give the event a name.")||need(start.length>=8,"Add a valid start date, like 2026-09-28 18:00.")||need(end.length>=8,"Add a valid end date, like 2026-09-28 19:00.")||need(!f.eventEnd||start<=end,"Event end must be after the start time.")}
     case "bitcoin":return need(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{20,}$/.test(f.bitcoin.trim()),"That doesn’t look like a Bitcoin address.");
     case "twofa":return need(/^[A-Z2-7]{8,}=*$/.test(normBase32(f.twofaSecret)),"The secret must be a Base32 string (letters A–Z and digits 2–7).")||need(f.twofaAccount.trim().length>0,"Add the account name (for example an email address).");
     case "image":return need(f.imageData.length>0,"Choose an image to embed.");
