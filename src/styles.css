@@ -355,10 +355,28 @@ html,body,#root{transition:background-color .18s ease,color .18s ease}
 .sw-qr,
 .offline-result-large img{color-scheme:light}
 
-/* System theme is represented by the stored mode, while the resolved CSS stays deterministic. */
-.theme-toggle{position:relative}
-.theme-toggle svg{transition:transform .18s ease}
+/* Explicit Light / Dark control. Light is the default; no system-mode dependency. */
+.theme-toggle{
+  min-height:34px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:0 10px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:var(--surface);
+  color:var(--text);
+  font:600 12px/1 inherit;
+  cursor:pointer;
+  transition:background-color .18s ease,border-color .18s ease,color .18s ease,transform .18s ease;
+}
+.theme-toggle:hover{background:var(--surface-2);border-color:var(--line-strong);}
+.theme-toggle:active{transform:translateY(1px);}
+.theme-toggle svg{flex:0 0 auto;transition:transform .18s ease}
 .theme-toggle:hover svg{transform:rotate(-10deg) scale(1.04)}
+:root[data-theme="dark"] .theme-toggle{background:#13161B;border-color:#2D333D;color:#F4F6F8}
+:root[data-theme="dark"] .theme-toggle:hover{background:#181C22;border-color:#3A424E}
 
 @media(max-width:720px){
   :root[data-theme="dark"] .app-header{background:rgba(15,17,21,.96)}

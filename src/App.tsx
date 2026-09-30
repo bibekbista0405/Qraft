@@ -12,7 +12,7 @@ import {
   FileText, ImagePlus, Layers, Link2, Mail, MapPin, MessageCircle, Palette, Phone, Play, QrCode,
   ScanLine, Search, Send, Settings2, Sparkles, Star, Ticket, Trash2, Undo2, Redo2, Upload,
   UserRound, Video, Wifi, X, Instagram, Facebook, Youtube, Smartphone, ShieldCheck, Zap, Menu,
-  SlidersHorizontal, CircleHelp, FolderOpen, LayoutTemplate, Paintbrush, Copy, Command, Clock3, WifiOff, DownloadCloud, Sun, Moon, Monitor
+  SlidersHorizontal, CircleHelp, FolderOpen, LayoutTemplate, Paintbrush, Copy, Command, Clock3, WifiOff, DownloadCloud, Sun, Moon
 } from "lucide-react";
 
 type Step = 1|2|3|4;
@@ -152,7 +152,7 @@ async function embedImageFile(file:File):Promise<{data:string;name:string}> {
 
 type View = "landing"|"create"|"templates"|"tools"|"projects"|"scanner"|"privacy"|"terms"|"developer";
 
-type ThemeMode="light"|"dark"|"system";
+type ThemeMode="light"|"dark";
 
 function applyTheme(mode:ThemeMode){
  const root=document.documentElement;
@@ -165,23 +165,20 @@ function Header({view,onNavigate,onHome}:{view:View;onNavigate:(v:View)=>void;on
  const items:[View,string][]=[["create","Create"],["templates","Templates"],["tools","Tools"],["projects","Projects"],["scanner","Scan & test"]];
  const [online,setOnline]=useState(()=>navigator.onLine);
  const [installEvent,setInstallEvent]=useState<any>(null);
- const [theme,setTheme]=useState<ThemeMode>(()=>(localStorage.getItem("qraft-theme") as ThemeMode)||"system");
+ const [theme,setTheme]=useState<ThemeMode>(()=>{const stored=localStorage.getItem("qraft-theme");return stored==="dark"?"dark":"light"});
  useEffect(()=>{
    applyTheme(theme);
-   const media=window.matchMedia("(prefers-color-scheme: dark)");
-   const onSystemChange=()=>{if(theme==="system")applyTheme("system")};
-   media.addEventListener?.("change",onSystemChange);
-   return()=>media.removeEventListener?.("change",onSystemChange);
+
  },[theme]);
  useEffect(()=>{const onOnline=()=>setOnline(true),onOffline=()=>setOnline(false),onInstall=(e:any)=>{e.preventDefault();setInstallEvent(e)},onInstalled=()=>setInstallEvent(null);window.addEventListener("online",onOnline);window.addEventListener("offline",onOffline);window.addEventListener("beforeinstallprompt",onInstall as EventListener);window.addEventListener("appinstalled",onInstalled);return()=>{window.removeEventListener("online",onOnline);window.removeEventListener("offline",onOffline);window.removeEventListener("beforeinstallprompt",onInstall as EventListener);window.removeEventListener("appinstalled",onInstalled)}},[]);
  const install=async()=>{if(!installEvent)return;try{await installEvent.prompt()}catch{/* browser declined or does not support the prompt */}finally{setInstallEvent(null)}};
- const nextTheme=()=>{const next:ThemeMode=theme==="system"?"dark":theme==="dark"?"light":"system";setTheme(next);localStorage.setItem("qraft-theme",next)};
- const ThemeIcon=theme==="dark"?Moon:theme==="light"?Sun:Monitor;
- const themeLabel=theme==="dark"?"Dark mode":theme==="light"?"Light mode":"System theme";
+ const nextTheme=()=>{const next:ThemeMode=theme==="dark"?"light":"dark";setTheme(next);localStorage.setItem("qraft-theme",next)};
+ const ThemeIcon=theme==="dark"?Moon:Sun;
+ const themeLabel=theme==="dark"?"Dark mode":"Light mode";
  return <header className="app-header">
    <button className="app-brand" onClick={onHome} aria-label="Qraft home"><img src={LOGO_SRC} alt="Qraft"/><span><b>Qraft</b><small>QR maker, made easy</small></span></button>
    <nav className="app-nav">{items.map(([id,label])=><button key={id} className={view===id?"active":""} onClick={()=>onNavigate(id)}>{label}</button>)}</nav>
-   <div className="header-actions">{!online&&<span className="offline-pill" title="Qraft is offline. Local creation and saved projects remain available."><WifiOff size={14}/> Offline</span>}{installEvent&&<button className="header-icon install-action" onClick={()=>void install()} title="Install Qraft"><DownloadCloud size={17}/></button>}<button className="header-icon" onClick={()=>window.dispatchEvent(new Event("qraft:command"))} title="Command palette · Ctrl/⌘ K" aria-label="Open command palette"><Command size={17}/></button><button className="header-icon theme-toggle" onClick={nextTheme} title={`${themeLabel} · click to change`} aria-label={`Theme: ${themeLabel}. Click to change theme`}><ThemeIcon size={17}/></button><button className="header-icon" onClick={()=>onNavigate("scanner")} title="Scan and test"><ScanLine size={17}/></button><button className="header-cta" onClick={()=>onNavigate("create")}><QrCode size={16}/> Create QR</button></div>
+   <div className="header-actions">{!online&&<span className="offline-pill" title="Qraft is offline. Local creation and saved projects remain available."><WifiOff size={14}/> Offline</span>}{installEvent&&<button className="header-icon install-action" onClick={()=>void install()} title="Install Qraft"><DownloadCloud size={17}/></button>}<button className="header-icon" onClick={()=>window.dispatchEvent(new Event("qraft:command"))} title="Command palette · Ctrl/⌘ K" aria-label="Open command palette"><Command size={17}/></button><button className="theme-toggle" onClick={nextTheme} title={`Switch to ${theme==="dark"?"Light":"Dark"} mode`} aria-label={`Current theme: ${themeLabel}. Switch to ${theme==="dark"?"Light":"Dark"} mode`}><ThemeIcon size={16}/><span>{theme==="dark"?"Dark":"Light"}</span></button><button className="header-icon" onClick={()=>onNavigate("scanner")} title="Scan and test"><ScanLine size={17}/></button><button className="header-cta" onClick={()=>onNavigate("create")}><QrCode size={16}/> Create QR</button></div>
  </header>
 }
 

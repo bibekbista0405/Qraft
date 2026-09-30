@@ -4,9 +4,8 @@
     <script>
       (() => {
         try {
-          const mode = localStorage.getItem("qraft-theme") || "system";
-          const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-          const resolved = mode === "dark" || (mode === "system" && dark) ? "dark" : "light";
+          const mode = localStorage.getItem("qraft-theme");
+          const resolved = mode === "dark" ? "dark" : "light";
           document.documentElement.dataset.theme = resolved;
           document.documentElement.style.colorScheme = resolved;
         } catch {}
