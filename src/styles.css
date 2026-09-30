@@ -184,3 +184,216 @@ a{color:inherit}
 .frame-icon-ribbon{width:38px;height:16px;border-radius:4px}.frame-icon-outline{border-radius:7px;background:transparent}.frame-icon-corner{border-radius:3px;background:linear-gradient(var(--text),var(--text)) left top/8px 2px no-repeat,linear-gradient(var(--text),var(--text)) left top/2px 8px no-repeat,linear-gradient(var(--text),var(--text)) right bottom/8px 2px no-repeat,linear-gradient(var(--text),var(--text)) right bottom/2px 8px no-repeat}.frame-icon-stamp{border-radius:3px;border-style:dashed}
 @media(max-width:720px){.style-choice-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.frame-choices{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .frame-cta-ribbon{left:50%;right:auto;min-width:360px;border-radius:6px;letter-spacing:.08em}.frame-cta-outline{min-width:250px;border:2px solid currentColor;border-radius:14px}.frame-cta-corner{min-width:250px;border:2px solid currentColor;border-radius:4px;background:transparent!important}.frame-cta-stamp{min-width:240px;border:2px dashed currentColor;border-radius:5px;background:transparent!important}
+
+/* Qraft dark mode — visual system only. QR rendering/export surfaces keep their own design colors. */
+:root{
+  --bg-app:#f4f6f8;
+  --bg:#f4f6f8;
+  --surface:#ffffff;
+  --surface-2:#f8fafc;
+  --text:#0f172a;
+  --muted:#64748b;
+  --muted-2:#94a3b8;
+  --line:#dce2e8;
+  --line-strong:#cbd5df;
+  --accent:#2563eb;
+  --accent-strong:#1d4ed8;
+  --accent-soft:#eaf1ff;
+  --success:#0f766e;
+  --success-soft:#e7f6f2;
+  --danger:#b42318;
+  --danger-soft:#fff1ef;
+  --warning:#9a6700;
+  --warning-soft:#fff7df;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.05);
+  --shadow-md:0 12px 30px rgba(15,23,42,.08);
+  --shadow-lg:0 24px 60px rgba(15,23,42,.12);
+}
+
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg-app:#0B0D10;
+  --bg:#0B0D10;
+  --surface:#13161B;
+  --surface-2:#181C22;
+  --surface-3:#1D222A;
+  --text:#F4F6F8;
+  --muted:#B4BBC5;
+  --muted-2:#7D8591;
+  --line:#242932;
+  --line-strong:#2D333D;
+  --line-stronger:#3A424E;
+  --accent:#8B7CFF;
+  --accent-strong:#7565F5;
+  --accent-hover:#9B8FFF;
+  --accent-soft:rgba(139,124,255,.12);
+  --success:#38C793;
+  --success-soft:rgba(56,199,147,.12);
+  --danger:#F06B75;
+  --danger-soft:rgba(240,107,117,.12);
+  --warning:#F2B84B;
+  --warning-soft:rgba(242,184,75,.12);
+  --info:#58A6FF;
+  --info-soft:rgba(88,166,255,.12);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.20);
+  --shadow-md:0 12px 30px rgba(0,0,0,.24);
+  --shadow-lg:0 24px 60px rgba(0,0,0,.34);
+}
+
+html,body,#root{transition:background-color .18s ease,color .18s ease}
+.app-header,.studio-panel,.clean-preview,.template-station-inner,.scanner-card,.scan-result-card,.download-success-card,.qraft-crash-card,.info-top,.command-palette,.project-card-new,.utility-card,.empty-page,.sw-card,.sw-steps article,.sw-perks article,.sw-final,.template-card-new{transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease}
+
+:root[data-theme="dark"] .app-header{background:rgba(15,17,21,.94)}
+:root[data-theme="dark"] .app-nav button:hover,
+:root[data-theme="dark"] .header-icon:hover,
+:root[data-theme="dark"] .soft:hover:not(:disabled),
+:root[data-theme="dark"] .text-button:hover,
+:root[data-theme="dark"] .icon-button:hover{background:#181C22;color:var(--text)}
+:root[data-theme="dark"] .app-nav button.active{background:rgba(139,124,255,.12);color:#F4F6F8}
+:root[data-theme="dark"] .header-cta,
+:root[data-theme="dark"] .primary,
+:root[data-theme="dark"] .sw-btn{background:#8B7CFF}
+:root[data-theme="dark"] .header-cta:hover,
+:root[data-theme="dark"] .primary:hover:not(:disabled),
+:root[data-theme="dark"] .sw-btn:hover{background:#9B8FFF}
+:root[data-theme="dark"] button:focus-visible,
+:root[data-theme="dark"] a:focus-visible,
+:root[data-theme="dark"] input:focus-visible,
+:root[data-theme="dark"] select:focus-visible,
+:root[data-theme="dark"] textarea:focus-visible{outline-color:rgba(139,124,255,.32)}
+
+/* Navigation / workspace depth */
+:root[data-theme="dark"] .studio-step-nav:hover{background:#13161B;border-color:#242932}
+:root[data-theme="dark"] .studio-step-nav.active{background:rgba(139,124,255,.10);border-color:rgba(139,124,255,.35)}
+:root[data-theme="dark"] .studio-step-nav.active>span{background:#8B7CFF;border-color:#8B7CFF;color:#fff}
+:root[data-theme="dark"] .studio-step-nav.done>span{background:rgba(56,199,147,.12);border-color:rgba(56,199,147,.30);color:#38C793}
+:root[data-theme="dark"] .studio-progress{background:#242932}
+:root[data-theme="dark"] .studio-navigation{background:#0B0D10}
+:root[data-theme="dark"] .studio-tip{border-color:#242932}
+:root[data-theme="dark"] .studio-spark{background:#181C22}
+
+/* Controls */
+:root[data-theme="dark"] .palette-chip,
+:root[data-theme="dark"] .style-choice-grid button,
+:root[data-theme="dark"] .search-field-large,
+:root[data-theme="dark"] .category-pills-new button,
+:root[data-theme="dark"] .project-filters button,
+:root[data-theme="dark"] .command-palette,
+:root[data-theme="dark"] .template-card-new,
+:root[data-theme="dark"] .template-station-inner,
+:root[data-theme="dark"] .scanner-card,
+:root[data-theme="dark"] .scan-result-card,
+:root[data-theme="dark"] .download-success-card,
+:root[data-theme="dark"] .qraft-crash-card,
+:root[data-theme="dark"] .info-top,
+:root[data-theme="dark"] .sw-card,
+:root[data-theme="dark"] .sw-steps article,
+:root[data-theme="dark"] .sw-perks article,
+:root[data-theme="dark"] .sw-final{background:var(--surface)}
+:root[data-theme="dark"] .soft,
+:root[data-theme="dark"] .icon-button,
+:root[data-theme="dark"] .header-icon{background:#13161B;border-color:#2D333D;color:#B4BBC5}
+:root[data-theme="dark"] .soft:hover:not(:disabled){border-color:#3A424E}
+:root[data-theme="dark"] .style-choice-grid button:hover{background:#181C22;border-color:#3A424E}
+:root[data-theme="dark"] .style-choice-grid button.selected{background:rgba(139,124,255,.10);border-color:rgba(139,124,255,.40);color:#9B8FFF;box-shadow:0 0 0 2px rgba(139,124,255,.08)}
+:root[data-theme="dark"] .palette-chip i{border-color:rgba(255,255,255,.14)}
+:root[data-theme="dark"] .palette-chip:hover{border-color:#3A424E}
+:root[data-theme="dark"] .search-field-large input,
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea{color:var(--text)}
+:root[data-theme="dark"] .search-field-large input::placeholder,
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder{color:#7D8591}
+:root[data-theme="dark"] .search-field-large{border-color:#2D333D;background:#101318}
+:root[data-theme="dark"] .station-type select{background:#101318;border-color:#2D333D}
+:root[data-theme="dark"] .color-picker{background:#181C22}
+
+/* Library / tools */
+:root[data-theme="dark"] .project-filters button.active,
+:root[data-theme="dark"] .category-pills-new button.active{border-color:rgba(139,124,255,.40);background:rgba(139,124,255,.12);color:#9B8FFF}
+:root[data-theme="dark"] .project-thumb-wrap>img{background:#101318}
+:root[data-theme="dark"] .project-favorite{background:rgba(19,22,27,.94);border-color:#3A424E;color:#B4BBC5;box-shadow:0 4px 14px rgba(0,0,0,.28)}
+:root[data-theme="dark"] .project-tags em{background:#181C22;color:#B4BBC5}
+:root[data-theme="dark"] .command-overlay{background:rgba(0,0,0,.58)}
+:root[data-theme="dark"] .command-head{border-color:#242932}
+:root[data-theme="dark"] .command-list button:hover,
+:root[data-theme="dark"] .command-list button:focus-visible{background:#181C22}
+:root[data-theme="dark"] .command-key{background:rgba(139,124,255,.12);color:#9B8FFF}
+:root[data-theme="dark"] .gradient-control,
+:root[data-theme="dark"] .lab-score{background:#181C22}
+:root[data-theme="dark"] .qr-health{background:#13161B}
+:root[data-theme="dark"] .qr-health-bar{background:#242932}
+:root[data-theme="dark"] .qr-health-items span.ok{background:rgba(56,199,147,.12);color:#38C793}
+:root[data-theme="dark"] .qr-health-items span{background:rgba(240,107,117,.12);color:#F06B75}
+:root[data-theme="dark"] .lab-checks span{background:rgba(56,199,147,.12);color:#38C793}
+:root[data-theme="dark"] .lab-checks span.warn{background:rgba(242,184,75,.12);color:#F2B84B}
+:root[data-theme="dark"] .offline-pill{background:rgba(242,184,75,.12);border-color:rgba(242,184,75,.35);color:#F2B84B}
+
+/* Scanner / drop states */
+:root[data-theme="dark"] .scanner-drop-zone{border-color:#3A424E;background:#101318}
+:root[data-theme="dark"] .scanner-drop-zone:hover{background:#13161B;border-color:#8B7CFF}
+:root[data-theme="dark"] .global-drop-capture{background:rgba(139,124,255,.08)}
+:root[data-theme="dark"] .global-drop-capture>div{background:rgba(19,22,27,.96);border-color:#8B7CFF;box-shadow:var(--shadow-lg)}
+:root[data-theme="dark"] .capture-icon{background:rgba(139,124,255,.12);color:#9B8FFF}
+:root[data-theme="dark"] .offline-result-large img{background:#fff}
+
+/* Landing / marketing surfaces. The QR artwork remains untouched. */
+:root[data-theme="dark"] .landing-new{background:#0B0D10}
+:root[data-theme="dark"] .sw-pill{background:#13161B;border-color:#2D333D;color:#9B8FFF}
+:root[data-theme="dark"] .sw-hero-copy h1 em{color:#9B8FFF}
+:root[data-theme="dark"] .sw-btn.ghost{background:#13161B;border-color:#2D333D;color:#F4F6F8}
+:root[data-theme="dark"] .sw-blob.b1{background:rgba(139,124,255,.10)}
+:root[data-theme="dark"] .sw-blob.b2{background:rgba(56,199,147,.08)}
+:root[data-theme="dark"] .sw-sticker{background:#13161B;border-color:#2D333D;color:#F4F6F8}
+:root[data-theme="dark"] .sw-card{box-shadow:0 24px 60px rgba(0,0,0,.34)}
+:root[data-theme="dark"] .sw-qr{border-color:#2D333D}
+
+/* Keep actual QR artwork/export presentation isolated from app theme. */
+.clean-preview-sheet,
+.clean-preview-qr,
+.sw-qr,
+.offline-result-large img{color-scheme:light}
+
+/* System theme is represented by the stored mode, while the resolved CSS stays deterministic. */
+.theme-toggle{position:relative}
+.theme-toggle svg{transition:transform .18s ease}
+.theme-toggle:hover svg{transform:rotate(-10deg) scale(1.04)}
+
+@media(max-width:720px){
+  :root[data-theme="dark"] .app-header{background:rgba(15,17,21,.96)}
+}
+
+/* Dark-mode coverage for legacy fixed surfaces */
+:root[data-theme="dark"] .danger-outline{background:#13161B;border-color:rgba(240,107,117,.38);color:#F06B75}
+:root[data-theme="dark"] .type-tile:hover{background:#181C22;border-color:#3A424E}
+:root[data-theme="dark"] .type-tile.active{border-color:rgba(139,124,255,.40);background:rgba(139,124,255,.10);box-shadow:0 0 0 2px rgba(139,124,255,.08)}
+:root[data-theme="dark"] .field input,
+:root[data-theme="dark"] .field select,
+:root[data-theme="dark"] .field textarea{background:#101318;border-color:#2D333D}
+:root[data-theme="dark"] .field input:hover,
+:root[data-theme="dark"] .field select:hover,
+:root[data-theme="dark"] .field textarea:hover{border-color:#3A424E}
+:root[data-theme="dark"] .field input:focus,
+:root[data-theme="dark"] .field select:focus,
+:root[data-theme="dark"] .field textarea:focus{border-color:#8B7CFF;box-shadow:0 0 0 3px rgba(139,124,255,.12)}
+:root[data-theme="dark"] .embedded-preview{background:#13161B}
+:root[data-theme="dark"] .embedded-preview button{background:#13161B;border-color:rgba(240,107,117,.38)}
+:root[data-theme="dark"] .logo-preview{background:#101318}
+:root[data-theme="dark"] .template-card-new:hover,
+:root[data-theme="dark"] .template-card-new.active{border-color:rgba(139,124,255,.40);box-shadow:0 0 0 2px rgba(139,124,255,.08)}
+:root[data-theme="dark"] .template-card-art em{background:rgba(19,22,27,.82)}
+:root[data-theme="dark"] .info-top{background:#0F1115}
+:root[data-theme="dark"] .download-success-overlay{background:rgba(0,0,0,.58)}
+:root[data-theme="dark"] .download-success-card,
+:root[data-theme="dark"] .qraft-crash-card{background:#13161B}
+:root[data-theme="dark"] .qraft-toast{background:rgba(29,34,42,.96)}
+:root[data-theme="dark"] .offline-pill{background:rgba(242,184,75,.12)}
+:root[data-theme="dark"] .autosave-pill{background:#13161B}
+:root[data-theme="dark"] .type-count{background:#181C22}
+:root[data-theme="dark"] .content-status{border-color:rgba(56,199,147,.30)}
+
+/* Mobile keeps the theme control available while other utility icons collapse. */
+@media(max-width:720px){
+  .header-actions .theme-toggle{display:inline-flex}
+}

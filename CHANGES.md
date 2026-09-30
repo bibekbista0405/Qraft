@@ -73,3 +73,13 @@
 - Made `npm run build` call the dedicated `typecheck` script before Vite, keeping the build pipeline explicit and easier to diagnose.
 - Kept `vercel.json` minimal so it does not override dependency/runtime behavior unnecessarily.
 - Updated the package-lock root engine metadata to match `package.json`.
+
+## Dark mode — Qraft visual system
+
+- Added persistent **System / Dark / Light** theme control in the application header.
+- Added the exact Qraft dark palette: `#0B0D10` app background, layered charcoal surfaces, `#8B7CFF` primary accent, and updated semantic success/warning/error colors.
+- Added dark-mode hierarchy for navigation, studio panels, controls, templates, projects, tools, scanner, overlays, command palette, legal pages, and feedback states.
+- Added subtle 180ms theme transitions while respecting `prefers-reduced-motion`.
+- Kept QR artwork surfaces isolated from the application theme so dark mode does not invert, recolor, or alter QR generation/export output.
+- Added early theme application in `index.html` to reduce light-mode flash when a dark/system preference is active.
+- No QR payload, rendering, scan, export, storage, template, batch, or PWA logic was intentionally changed.
