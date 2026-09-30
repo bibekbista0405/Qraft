@@ -685,3 +685,22 @@ body.template-editor-active{overflow:hidden;height:100%;overscroll-behavior:none
   .template-editor-status small{display:none}
   .template-editor-footer-actions .soft,.template-editor-footer-actions .primary{min-height:34px;padding:0 10px}
 }
+
+/* Developer profile */
+.developer-profile-card{padding:26px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-md);margin:8px 0 26px}
+.developer-profile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.developer-kicker{display:block;margin-bottom:7px;color:var(--accent-strong);font-size:10px;font-weight:900;letter-spacing:.15em}
+.developer-profile-head h2{margin:0 0 6px!important;font:800 30px/1.05 "Aptos Display","Segoe UI",sans-serif!important;letter-spacing:-.04em}
+.developer-profile-head p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.developer-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:22px 0}
+.developer-profile-grid>div{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.developer-profile-grid span,.developer-contact>span{display:block;margin-bottom:5px;color:var(--muted-2);font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.developer-profile-grid b{display:block;color:var(--text);font-size:13px;line-height:1.45}
+.developer-tags{display:flex;flex-wrap:wrap;gap:7px;padding-bottom:22px}
+.developer-tags span{padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);color:var(--text);font-size:11px;font-weight:750}
+.developer-projects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:20px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.developer-projects>div{display:grid;gap:3px;padding:13px;border-radius:11px;background:var(--surface-2)}
+.developer-projects b{font-size:13px}.developer-projects span{color:var(--muted);font-size:11px}
+.developer-contact{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:20px;font-size:12px}.developer-contact a{color:var(--accent-strong);font-weight:750;text-decoration:none}.developer-contact a:hover{text-decoration:underline}
+:root[data-theme="dark"] .developer-profile-card{background:var(--surface);box-shadow:0 24px 60px rgba(0,0,0,.28)}
+@media(max-width:700px){.developer-profile-head{flex-direction:column}.developer-profile-grid,.developer-projects{grid-template-columns:1fr}.developer-profile-card{padding:20px}}

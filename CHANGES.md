@@ -125,3 +125,10 @@
 - Replaced the generic mini/demo QR payload used across Qraft's visible sample QR previews with the developer portfolio URL: `https://bibekbista.vercel.app/`.
 - Updated the landing-page showcase card to identify the QR as Bibek Bista's developer portfolio and use a clear "SCAN TO VISIT" call to action.
 - Kept the QR generator, template rendering, export, verification, and user-entered content flows unchanged.
+
+## Developer portfolio demo refinement
+
+- Removed the developer's personal name from the public landing-page demo QR card; the card now focuses only on scanning the QR.
+- Changed the default URL loaded by the Create QR workspace to `https://bibekbista.vercel.app/`, so a fresh QR starts as the developer portfolio QR.
+- Added a detailed Developer Profile card using information published on the developer's portfolio, including role, location, education, direction, availability, skills, projects, contact email, GitHub, and portfolio link.
+- Kept personal developer details confined to the Developer page rather than the general Qraft landing experience.
