@@ -8,7 +8,7 @@ export type Finder = "square"|"rounded"|"circle"|"diamond";
 export type EC = "L"|"M"|"Q"|"H";
 export type FrameStyle = "none"|"soft"|"badge"|"scan"|"ticket"|"ribbon"|"outline"|"corner"|"stamp";
 export type BodyShape = Pattern;
-export type DesignState = {title:string;subtitle:string;fg:string;bg:string;bodyShape:BodyShape;finder:Finder;ec:EC;size:number;margin:number;transparent:boolean;logo:string|null;logoName:string;logoSize:number;frame:boolean;frameStyle:FrameStyle;cta:string;radius:number;gradient:boolean;inkGradient?:boolean;gradientEnd?:string;accent:string;advanced?:boolean;logoPreset?:boolean};
+export type DesignState = {title:string;subtitle:string;fg:string;bg:string;bodyShape:BodyShape;finder:Finder;ec:EC;size:number;margin:number;transparent:boolean;logo:string|null;logoName:string;logoSize:number;logoEnabled?:boolean;frame:boolean;frameStyle:FrameStyle;cta:string;radius:number;gradient:boolean;inkGradient?:boolean;gradientEnd?:string;accent:string;advanced?:boolean;logoPreset?:boolean};
 
 /** The QR spec requires a 4-module quiet zone. */
 export const MIN_MARGIN = 4;
@@ -31,14 +31,14 @@ export async function prepareLogo(file:Blob):Promise<string>{
 
 function setup(payload:string,d:DesignState){
   const embedded=isEmbeddedImagePayload(payload);
-  const ec:EC=embedded?"L":(d.logo?"H":d.ec);
+  const ec:EC=embedded?"L":(d.logoEnabled && d.logo?"H":d.ec);
   const shape:BodyShape=embedded?"square":(d.bodyShape||"square");
   const finder:Finder=embedded?"square":d.finder;
-  const logo=embedded?null:d.logo;
+  const logo=embedded?null:(d.logoEnabled===false?null:d.logo);
   const qr=QRCode.create(payload||" ",{errorCorrectionLevel:ec});
   const modules=qr.modules.size;
   const data=qr.modules.data as unknown as ArrayLike<number>;
-  const margin=Math.max(MIN_MARGIN,d.margin);
+  const margin=Math.max(MIN_MARGIN,d.logoEnabled&&d.logo?6:d.margin);
   const align=alignmentCenters(qr.version,modules);
   const solid=(r:number,c:number)=>align.some(([ar,ac])=>Math.abs(r-ar)<=2&&Math.abs(c-ac)<=2);
   return {embedded,shape,finder,logo,modules,data,margin,solid};
@@ -58,7 +58,7 @@ function alignmentCenters(version:number,modules:number):[number,number][]{
 }
 const inFinder=(r:number,c:number,modules:number)=>((r<7&&c<7)||(r<7&&c>=modules-7)||(r>=modules-7&&c<7));
 function logoGeometry(size:number,d:DesignState){
-  const logoSize=Math.min(size*.16,Math.max(size*.07,size*d.logoSize/100));
+  const logoSize=Math.min(size*.12,Math.max(size*.07,size*d.logoSize/100));
   const pad=Math.max(size*.018,logoSize*.16);
   return {logoSize,pad,x:(size-logoSize)/2,y:(size-logoSize)/2};
 }
@@ -216,7 +216,7 @@ export async function verifyQR(payload:string,d:DesignState):Promise<string|null
     const img=ctx.getImageData(0,0,c.width,c.height);
     return jsQR(img.data,img.width,img.height,{inversionAttempts:inverted?"attemptBoth":"dontInvert"})?.data===payload;
   };
-  if(!(await decode(d.size)))throw new Error("The generated QR could not be verified. Try a larger quiet zone, a smaller logo, or higher contrast.");
+  if(!(await decode(d.size)))throw new Error("This QR design could not be verified. Qraft needs a 6+ module quiet zone, strong contrast, and a smaller or disabled logo for this design.");
   if(!isEmbeddedImagePayload(payload)&&!(await decode(300)))warnings.push("This QR is dense and may be hard to scan when small — shorten the content or print it larger.");
   return warnings.length?warnings.join(" "):null;
 }
