@@ -119,3 +119,9 @@
 - Added sticky desktop editing/save behavior and responsive mobile tab layout.
 - Kept QR rendering/export logic and template definitions intact.
 - Removed the stale System-theme branch so the Light/Dark theme type and resolver are consistent.
+
+## Developer portfolio demo QR
+
+- Replaced the generic mini/demo QR payload used across Qraft's visible sample QR previews with the developer portfolio URL: `https://bibekbista.vercel.app/`.
+- Updated the landing-page showcase card to identify the QR as Bibek Bista's developer portfolio and use a clear "SCAN TO VISIT" call to action.
+- Kept the QR generator, template rendering, export, verification, and user-entered content flows unchanged.

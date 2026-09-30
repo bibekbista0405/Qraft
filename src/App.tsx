@@ -228,7 +228,7 @@ function Landing({go}:{go:(v:View)=>void}){
      <div className="sw-cta"><button className="sw-btn" onClick={()=>go("create")}><QrCode size={18}/> Make my QR <ArrowRight size={16}/></button><button className="sw-btn ghost" onClick={()=>go("templates")}><LayoutTemplate size={16}/> Browse templates</button></div>
      <ul className="sw-trust"><li><Check size={14}/> Private &amp; local</li><li><Check size={14}/> Built-in scan test</li><li><Check size={14}/> Print-ready</li></ul>
    </div><div className="sw-stage"><span className="sw-blob b1"/><span className="sw-blob b2"/>
-     <div className="sw-card"><small>QRAFT</small><h3>Cloud Café</h3><p>Scan for today's menu</p><div className="sw-qr"><MiniQR fg="#5b3a63" bg="#ffffff" ec="H" pattern="rounded" finder="rounded"/><div className="qr-badge"><img src={LOGO_SRC} alt=""/></div></div><span className="sw-scan">SCAN ME</span></div>
+     <div className="sw-card"><small>DEVELOPER PORTFOLIO</small><h3>Bibek Bista</h3><p>Scan to explore my portfolio</p><div className="sw-qr"><MiniQR fg="#5b3a63" bg="#ffffff" ec="H" pattern="rounded" finder="rounded"/><div className="qr-badge"><img src={LOGO_SRC} alt="Qraft"/></div></div><span className="sw-scan">SCAN TO VISIT</span></div>
      <div className="sw-sticker s1"><ShieldCheck size={15}/> Scan verified</div><div className="sw-sticker s2"><Palette size={15}/> 8 sweet palettes</div><div className="sw-sticker s3"><Sparkles size={15}/> Logos &amp; frames</div>
    </div></section>
    <section className="sw-steps">{steps.map(([n,t,d])=><article key={n}><b>{n}</b><h3>{t}</h3><p>{d}</p></article>)}</section>
@@ -612,7 +612,7 @@ function InfoPage({kind,onBack,onNavigate,onPrivacy,onTerms,onDeveloper}:{kind:"
 
 function MiniQR({fg,bg,ec="M",pattern="square",finder="square"}:{fg:string;bg:string;ec:EC;pattern?:Pattern;finder?:Finder}){
  const ref=useRef<HTMLCanvasElement>(null);
- useEffect(()=>{let alive=true;(async()=>{try{const c=await renderQR("https://qraft.app/preview",{...initialDesign,fg,bg,ec,bodyShape:pattern,finder,margin:MIN_MARGIN,size:180,logo:null,transparent:false},180);if(alive&&ref.current){ref.current.width=c.width;ref.current.height=c.height;ref.current.getContext("2d")?.drawImage(c,0,0)}}catch{}})();return()=>{alive=false}},[fg,bg,ec,pattern,finder]);
+ useEffect(()=>{let alive=true;(async()=>{try{const c=await renderQR("https://bibekbista.vercel.app/",{...initialDesign,fg,bg,ec,bodyShape:pattern,finder,margin:MIN_MARGIN,size:180,logo:null,transparent:false},180);if(alive&&ref.current){ref.current.width=c.width;ref.current.height=c.height;ref.current.getContext("2d")?.drawImage(c,0,0)}}catch{}})();return()=>{alive=false}},[fg,bg,ec,pattern,finder]);
  return <canvas ref={ref} className="mini-real-qr"/>
 }
 
