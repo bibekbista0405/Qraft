@@ -1,3 +1,6 @@
+
+- Fixed final App.tsx TypeScript integration issues: missing RotateCcw import and ensured template/project import code is strongly typed.
+- Standardized the supported local/CI Node.js runtime on Node 22.x to match the repository CI and current Qraft development environment.
 ## Template Editor workspace — 2026-09-30
 
 - Rebuilt the template customization screen as a dedicated viewport-fitted editor workspace while preserving the existing template gallery.

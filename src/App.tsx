@@ -12,7 +12,7 @@ import {
   FileText, ImagePlus, Layers, Link2, Mail, MapPin, MessageCircle, Palette, Phone, Play, QrCode,
   ScanLine, Search, Send, Settings2, Sparkles, Star, Ticket, Trash2, Undo2, Redo2, Upload,
   UserRound, Video, Wifi, X, Instagram, Facebook, Youtube, Smartphone, ShieldCheck, Zap, Menu,
-  SlidersHorizontal, CircleHelp, FolderOpen, LayoutTemplate, Paintbrush, Copy, Command, Clock3, WifiOff, DownloadCloud, Sun, Moon
+  SlidersHorizontal, CircleHelp, FolderOpen, LayoutTemplate, Paintbrush, Copy, Command, Clock3, WifiOff, DownloadCloud, Sun, Moon, RotateCcw
 } from "lucide-react";
 
 type Step = 1|2|3|4;
@@ -405,7 +405,7 @@ function CreatePage({state}:{state:AppState}){
 }
 
 function TemplatesPage({state}:{state:AppState}){
-  const {newProject,templateSearch,setTemplateSearch,templateCategory,setTemplateCategory,filteredTemplates,applyTemplate,setView,type,setType,form,design,payload,busy,exportPng,resetDesign,undoAction,redoAction,undo,redo}=state;
+  const {newProject,templateSearch,setTemplateSearch,templateCategory,setTemplateCategory,filteredTemplates,applyTemplate,setView,type,setType,form,design,payload,busy,exportPng,undoAction,redoAction,undo,redo}=state;
   const [selected,setSelected]=useState<string>('');
   const [editorTab,setEditorTab]=useState<"content"|"appearance"|"shape"|"branding"|"advanced">("content");
   const [completed,setCompleted]=useState(false);
@@ -555,7 +555,7 @@ function TemplatesPage({state}:{state:AppState}){
 function EditorPanelHeader({icon:Icon,title,text}:{icon:LucideIcon;title:string;text:string}){return <div className="editor-panel-header"><span className="editor-section-icon"><Icon size={17}/></span><div><span className="page-eyebrow">EDIT SECTION</span><b>{title}</b><small>{text}</small></div></div>}
 
 function ToolsPage({state}:{state:AppState}){
- const {setView,batch,setBatch,batchResults,runBatch,downloadBatch,batchProgress,payload,design,testCurrentQR,projects,exportProjects,importProjects}=state;
+ const {setView,batch,setBatch,batchResults,runBatch,downloadBatch,batchProgress,payload,design,testCurrentQR,projects,exportProjects,importProjects,notify}=state;
  const [backupInput,setBackupInput]=useState<HTMLInputElement|null>(null);
  const contrast=(a:string,b:string)=>{const lum=(hex:string)=>{const h=hex.replace("#","");const rgb=[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)].map(v=>{const x=v/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]};const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
  const ratio=contrast(design.fg,design.bg);const labStatus=ratio>=4.5&&design.margin>=4&&design.logoSize<=14?"Ready for testing":ratio>=3?"Review recommended":"High-risk design";
@@ -695,7 +695,7 @@ useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape"&&successRef.c
      if(raw?.app!=="Qraft"||raw.version!==1||!Array.isArray(raw.projects))throw new Error("Unsupported or invalid Qraft backup. Export a fresh Qraft v1 backup and try again.");
      const normalized=(raw.projects as unknown[]).map(normalizeImportedProject).filter((p):p is Project=>p!==null).slice(0,100);
      if(!normalized.length)throw new Error("No valid projects were found in this backup.");
-     const merged=Array.from(new Map([...projects.map(p=>[p.id,p]),...normalized.map(p=>[p.id,p])]).values()).sort((a,b)=>b.updated-a.updated).slice(0,100);
+     const merged=Array.from(new Map<string,Project>([...projects.map((p):[string,Project]=>[p.id,p]),...normalized.map((p):[string,Project]=>[p.id,p])]).values()).sort((a:Project,b:Project)=>b.updated-a.updated).slice(0,100);
      await saveProjects(merged);
      setProjects(merged);
      notify(`${normalized.length} project${normalized.length===1?"":"s"} imported`);

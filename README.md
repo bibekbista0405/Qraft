@@ -59,7 +59,7 @@ Projects are saved automatically as the QR content or design changes; there is n
 
 ## Run locally
 
-Requirements: Node.js 24.x recommended and used by the repository CI/build configuration.
+Requirements: Node.js 22.x recommended and used by the repository CI/build configuration.
 
 ```bash
 npm install

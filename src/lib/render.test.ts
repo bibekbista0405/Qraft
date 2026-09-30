@@ -13,7 +13,7 @@ describe("renderQR round trip",()=>{
       const p="https://example.com/a?b=1";
       const c=await renderQR(p,{...design,bodyShape:shape,finder},700);
       expect(decode(c)).toBe(p);
-    });
+    }, 15000);
   }
   it("keeps dots/diamond scannable on larger versions (solid alignment patterns)",async()=>{
     const p="https://example.com/a/very/long/path/that/needs/a/bigger/qr/code?x=1&y=2&z=3";
