@@ -310,9 +310,9 @@ function PreviewCard({payload,design,minimal=false}:{payload:string;design:Desig
    const el=artRef.current;
    if(!el)return;
    const updateScale=()=>{
-     const availableW=Math.max(1,el.clientWidth-20);
-     const availableH=Math.max(1,el.clientHeight-20);
-     const scale=Math.max(.28,Math.min(1,availableW/560,availableH/616));
+     const availableW=Math.max(1,el.clientWidth-16);
+     const availableH=Math.max(1,el.clientHeight-16);
+     const scale=Math.max(.16,Math.min(1,availableW/560,availableH/616));
      setPreviewScale(prev=>Math.abs(prev-scale)>.008?scale:prev);
    };
    updateScale();
