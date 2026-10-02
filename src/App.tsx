@@ -299,7 +299,7 @@ function DesignControls({design,update,updateMany,onLogo,onReset,payload,templat
 }
 function ColorPicker({label,value,onChange}:{label:string;value:string;onChange:(v:string)=>void}){return <label className="color-picker"><span>{label}</span><input type="color" value={value} onChange={e=>onChange(e.target.value)}/><code>{value}</code></label>}
 
-function PreviewCard({payload,design}:{payload:string;design:DesignState}){
+function PreviewCard({payload,design,minimal=false}:{payload:string;design:DesignState;minimal?:boolean}){
  const ref=useRef<HTMLCanvasElement>(null);
  const artRef=useRef<HTMLDivElement>(null);
  const [rendering,setRendering]=useState(false);
@@ -343,11 +343,11 @@ function PreviewCard({payload,design}:{payload:string;design:DesignState}){
    return()=>{alive=false};
  },[payload,design]);
  const sheetStyle={borderRadius:design.radius,background:design.gradient?`linear-gradient(145deg,${design.bg},${design.accent}26)`:design.bg,color:design.fg};
- return <div className="clean-preview">
-   <div className="preview-zone-top">
+ return <div className={`clean-preview${minimal?" template-preview-only":""}`}>
+   {!minimal&&<div className="preview-zone-top">
      <div className="preview-zone-title"><span className="eyebrow"><Sparkles size={14}/> LIVE PREVIEW</span><small>{rendering?"Updating your QR…":"Live changes appear here instantly."}</small></div>
      <span className="live-pill"><span className="live-dot"/>{rendering?"Updating":"Live"}</span>
-   </div>
+   </div>}
    <div className="clean-preview-art" ref={artRef}>
      <div className="preview-poster-wrap" style={{width:560*previewScale,height:616*previewScale}}>
        <div className={`clean-preview-sheet frame-${design.frameStyle||"badge"}`} style={{...sheetStyle,transform:`scale(${previewScale})`,transformOrigin:"top left"}}>
@@ -363,7 +363,7 @@ function PreviewCard({payload,design}:{payload:string;design:DesignState}){
        </div>
      </div>
    </div>
-   <div className="preview-chips"><span><Check size={12}/> Full card</span><span>{design.logoEnabled && design.logo?"Logo · EC H":`EC ${design.ec}`}</span><span>{design.size}px export</span></div>
+   {!minimal&&<div className="preview-chips"><span><Check size={12}/> Full card</span><span>{design.logoEnabled && design.logo?"Logo · EC H":`EC ${design.ec}`}</span><span>{design.size}px export</span></div>}
    {renderError&&<div className="preview-render-error">{renderError}</div>}
  </div>
 }
@@ -490,7 +490,7 @@ function TemplatesPage({state}:{state:AppState}){
             <div><span className="page-eyebrow">LIVE PREVIEW</span><b>See every change instantly</b></div>
             <span className="live-dot"><i/> Live</span>
           </div>
-          <div className="workspace-preview-stage"><PreviewCard payload={payload} design={design}/></div>
+          <div className="workspace-preview-stage"><PreviewCard payload={payload} design={design} minimal/></div>
           <div className="workspace-preview-foot">
             <span><Check size={13}/> Auto-saved locally</span>
             <small>{completed?"Customized version is ready to export.":customized?"Your changes are saved automatically.":"Starting from the selected template."}</small>

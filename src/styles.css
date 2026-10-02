@@ -726,3 +726,11 @@ body.template-editor-active{overflow:hidden;height:100%;overscroll-behavior:none
 .developer-contact{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:20px;font-size:12px}.developer-contact a{color:var(--accent-strong);font-weight:750;text-decoration:none}.developer-contact a:hover{text-decoration:underline}
 :root[data-theme="dark"] .developer-profile-card{background:var(--surface);box-shadow:0 24px 60px rgba(0,0,0,.28)}
 @media(max-width:700px){.developer-profile-head{flex-direction:column}.developer-profile-grid,.developer-projects{grid-template-columns:1fr}.developer-profile-card{padding:20px}}
+
+/* Template editor: keep the preview itself clean and presentation-first.
+   The editor header already communicates LIVE PREVIEW, so the nested
+   PreviewCard chrome is intentionally hidden only in this workspace. */
+.template-preview-only{height:100%;min-height:0;border:0;background:transparent;box-shadow:none;padding:0;border-radius:0;display:block;overflow:hidden}
+.template-preview-only .clean-preview-art{height:100%;min-height:0;padding:10px}
+.template-preview-only .clean-preview-sheet{box-shadow:0 22px 55px rgba(15,23,42,.16)}
+.template-preview-only .preview-refresh{z-index:2}
