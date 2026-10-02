@@ -132,3 +132,10 @@
 - Changed the default URL loaded by the Create QR workspace to `https://bibekbista.vercel.app/`, so a fresh QR starts as the developer portfolio QR.
 - Added a detailed Developer Profile card using information published on the developer's portfolio, including role, location, education, direction, availability, skills, projects, contact email, GitHub, and portfolio link.
 - Kept personal developer details confined to the Developer page rather than the general Qraft landing experience.
+
+## Dark mode + polish pass
+- Expanded dark-theme coverage across the create studio, template editor, developer ID card, project/tools surfaces, and shared page chrome.
+- Added dynamic browser/PWA theme-color updates when switching light/dark mode.
+- Improved dark editor surfaces, control states, focus treatment, and internal scrollbars without changing QR artwork colors.
+- Added subtle shared hover/active motion while preserving reduced-motion accessibility.
+- Kept the existing QR rendering/export surface color-isolated so dark application chrome cannot alter generated QR output.

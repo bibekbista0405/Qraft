@@ -199,7 +199,8 @@ function Header({view,onNavigate,onHome}:{view:View;onNavigate:(v:View)=>void;on
  const [theme,setTheme]=useState<ThemeMode>(()=>{const stored=localStorage.getItem("qraft-theme");return stored==="dark"?"dark":"light"});
  useEffect(()=>{
    applyTheme(theme);
-
+   const meta=document.querySelector('meta[name="theme-color"]');
+   if(meta) meta.setAttribute("content",theme==="dark"?"#0B0D10":"#2563eb");
  },[theme]);
  useEffect(()=>{const onOnline=()=>setOnline(true),onOffline=()=>setOnline(false),onInstall=(e:any)=>{e.preventDefault();setInstallEvent(e)},onInstalled=()=>setInstallEvent(null);window.addEventListener("online",onOnline);window.addEventListener("offline",onOffline);window.addEventListener("beforeinstallprompt",onInstall as EventListener);window.addEventListener("appinstalled",onInstalled);return()=>{window.removeEventListener("online",onOnline);window.removeEventListener("offline",onOffline);window.removeEventListener("beforeinstallprompt",onInstall as EventListener);window.removeEventListener("appinstalled",onInstalled)}},[]);
  const install=async()=>{if(!installEvent)return;try{await installEvent.prompt()}catch{/* browser declined or does not support the prompt */}finally{setInstallEvent(null)}};
